@@ -30,7 +30,8 @@ func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *interfaces
 		IsAdd:          isAdd,
 		McastSwIfIndex: multicastIf,
 		EncapVrfID:     gtpuLink.EncapVrfId,
-		Teid:           gtpuLink.Teid,
+		SrcTeid:        gtpuLink.Teid | gtpuLink.SrcTeid,
+		DstTeid:        gtpuLink.Teid | gtpuLink.DstTeid,
 	}
 
 	if gtpuLink.DecapNext == interfaces.GtpuLink_DEFAULT {
@@ -85,6 +86,57 @@ func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *interfaces
 	return uint32(reply.SwIfIndex), nil
 }
 
+func (h *InterfaceVppHandler) gtpuUpdateTunnelDst(ifIdx uint32, gtpuLink *interfaces.GtpuLink, multicastIf uint32) error {
+	req := &gtpu.GtpuSetTunnelDst{
+		SwIfIndex:      ifIdx,
+		McastSwIfIndex: multicastIf,
+		DstTeid:        gtpuLink.Teid | gtpuLink.DstTeid,
+	}
+
+	srcAddr := net.ParseIP(gtpuLink.SrcAddr)
+	if srcAddr == nil {
+		err := errors.New("bad source address for GTPU tunnel")
+		return err
+	}
+
+	dstAddr := net.ParseIP(gtpuLink.DstAddr)
+	if dstAddr == nil {
+		err := errors.New("bad destination address for GTPU tunnel")
+		return err
+	}
+
+	if gtpuLink.SrcAddr == gtpuLink.DstAddr {
+		err := errors.New("source and destination are the same")
+		return err
+	}
+
+	var isSrcIPv6, isDstIPv6 bool
+
+	if srcAddr.To4() == nil {
+		isSrcIPv6 = true
+	}
+	if dstAddr.To4() == nil {
+		isDstIPv6 = true
+	}
+
+	if !isSrcIPv6 && !isDstIPv6 {
+		req.IsIPv6 = 0
+		req.DstAddress = []byte(dstAddr.To4())
+	} else if isSrcIPv6 && isDstIPv6 {
+		req.IsIPv6 = 1
+		req.DstAddress = []byte(dstAddr.To16())
+	} else {
+		return errors.New("source and destination addresses must be both either IPv4 or IPv6")
+	}
+
+	reply := &gtpu.GtpuSetTunnelDstReply{}
+
+	if err := h.callsChannel.SendRequest(req).ReceiveReply(reply); err != nil {
+		return err
+	}
+	return nil
+}
+
 // AddGtpuTunnel adds new GTPU interface.
 func (h *InterfaceVppHandler) AddGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink, multicastIf uint32) (uint32, error) {
 	if h.gtpu == nil {
@@ -115,6 +167,18 @@ func (h *InterfaceVppHandler) DelGtpuTunnel(ifName string, gtpuLink *interfaces.
 		return err
 	}
 	return h.RemoveInterfaceTag(ifName, swIfIndex)
+}
+
+// UpdateGtpuTunnelDst updates the destination IP and TEID of a GTPU interface.
+func (h *InterfaceVppHandler) UpdateGtpuTunnelDst(ifIdx uint32, gtpuLink *interfaces.GtpuLink, multicastIf uint32) error {
+	if h.gtpu == nil {
+		return vpp.ErrPluginDisabled
+	}
+	if gtpuLink == nil {
+		return errors.New("missing GTPU tunnel information")
+	}
+
+	return h.gtpuUpdateTunnelDst(ifIdx, gtpuLink, multicastIf)
 }
 
 // dumpGtpuDetails dumps GTP-U interface details from VPP and fills them into the provided interface map.
@@ -150,7 +214,8 @@ func (h *InterfaceVppHandler) dumpGtpuDetails(ifc map[uint32]*vppcalls.Interface
 		gtpuLink := &interfaces.GtpuLink{
 			Multicast:  multicastIfName,
 			EncapVrfId: gtpuDetails.EncapVrfID,
-			Teid:       gtpuDetails.Teid,
+			SrcTeid:    gtpuDetails.SrcTeid,
+			DstTeid:    gtpuDetails.DstTeid,
 			DecapNext:  interfaces.GtpuLink_NextNode(gtpuDetails.DecapNextIndex),
 		}
 

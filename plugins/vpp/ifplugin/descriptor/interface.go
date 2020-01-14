@@ -151,6 +151,9 @@ var (
 
 	// ErrGtpuDstAddrBad is returned when destination address was not set to valid IP address.
 	ErrGtpuDstAddrBad = errors.Errorf("bad destination address for GTPU tunnel")
+
+	// ErrGtpuBothLegacyAndModernTeidSet is returned when both legacy and modern TEIDs are present.
+	ErrGtpuBothLegacyAndModernTeidSet = errors.Errorf("both legacy and modern TEID set for GTPU tunnel")
 )
 
 // InterfaceDescriptor teaches KVScheduler how to configure VPP interfaces.
@@ -332,7 +335,7 @@ func (d *InterfaceDescriptor) equivalentTypeSpecificConfig(oldIntf, newIntf *int
 			return false
 		}
 	case interfaces.Interface_GTPU_TUNNEL:
-		if !proto.Equal(oldIntf.GetGtpu(), newIntf.GetGtpu()) {
+		if !d.equivalentGtpu(oldIntf.GetGtpu(), newIntf.GetGtpu()) {
 			return false
 		}
 	}
@@ -401,6 +404,16 @@ func (d *InterfaceDescriptor) equivalentBond(oldBond, newBond *interfaces.BondLi
 	return oldBond.Id == newBond.Id &&
 		oldBond.Mode == newBond.Mode &&
 		oldBond.Lb == newBond.Lb
+}
+
+func (d *InterfaceDescriptor) equivalentGtpu(oldGtpu, newGtpu *interfaces.GtpuLink) bool {
+	return oldGtpu.SrcAddr == newGtpu.SrcAddr &&
+		oldGtpu.DstAddr == newGtpu.DstAddr &&
+		oldGtpu.Multicast == newGtpu.Multicast &&
+		oldGtpu.EncapVrfId == newGtpu.EncapVrfId &&
+		oldGtpu.DecapNext == newGtpu.DecapNext &&
+		oldGtpu.Teid|oldGtpu.SrcTeid == newGtpu.Teid|newGtpu.SrcTeid &&
+		oldGtpu.Teid|oldGtpu.DstTeid == newGtpu.Teid|newGtpu.DstTeid;
 }
 
 // MetadataFactory is a factory for index-map customized for VPP interfaces.
@@ -544,6 +557,9 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 		if net.ParseIP(intf.GetGtpu().DstAddr) == nil {
 			return kvs.NewInvalidValueError(ErrGtpuDstAddrBad, "link.gtpu.dst_addr")
 		}
+		if intf.GetGtpu().Teid != 0 && intf.GetGtpu().SrcTeid|intf.GetGtpu().DstTeid != 0 {
+			return kvs.NewInvalidValueError(ErrGtpuBothLegacyAndModernTeidSet, "link.gtpu.teid")
+		}
 	}
 
 	// validate unnumbered
@@ -567,15 +583,23 @@ func (d *InterfaceDescriptor) Validate(key string, intf *interfaces.Interface) e
 	return nil
 }
 
-// UpdateWithRecreate returns true if Type or Type-specific attributes are different.
+// UpdateWithRecreate returns true if Type or Type-specific attributes are different
+// and the interface cannot be updated without recreating that.
 func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldIntf, newIntf *interfaces.Interface, metadata *ifaceidx.IfaceMetadata) bool {
 	if oldIntf.Type != newIntf.Type {
 		return true
 	}
 
-	// if type-specific attributes have changed, then re-create the interface
-	if !d.equivalentTypeSpecificConfig(oldIntf, newIntf) {
-		return true
+	if oldIntf.GetType() != interfaces.Interface_GTPU_TUNNEL {
+		// if type-specific attributes have changed, then re-create the interface
+		if !d.equivalentTypeSpecificConfig(oldIntf, newIntf) {
+			return true
+		}
+	} else {
+		// GTPU might be updateable without recreate.
+		if d.updateWithRecreateGtpu(oldIntf.GetGtpu(), newIntf.GetGtpu()) {
+			return true
+		}
 	}
 
 	if (oldIntf.GetType() == interfaces.Interface_VXLAN_TUNNEL || oldIntf.GetType() == interfaces.Interface_GTPU_TUNNEL) && oldIntf.Vrf != newIntf.Vrf {
@@ -589,6 +613,22 @@ func (d *InterfaceDescriptor) UpdateWithRecreate(key string, oldIntf, newIntf *i
 	}
 
 	return false
+}
+
+// updateWithRecreateGtpu returns true if the GTPU tunnel interface needs to be recreated.
+func (d *InterfaceDescriptor) updateWithRecreateGtpu(oldGtpu, newGtpu *interfaces.GtpuLink) bool {
+	// Check whether the vpp interface handler supports GTPU tunnel destination update.
+	if d.ifHandler.IsFeatureSupported(vppcalls.FeatureGtpuUpdateTunnelDst) {
+		// Recreate if anything else than the destination changes.
+		// (dst addr, multicast intf, and dst teid can be updated.)
+		return (oldGtpu.SrcAddr != newGtpu.SrcAddr ||
+			oldGtpu.Teid|oldGtpu.SrcTeid != newGtpu.Teid|newGtpu.SrcTeid ||
+			oldGtpu.EncapVrfId != newGtpu.EncapVrfId ||
+			oldGtpu.DecapNext != newGtpu.DecapNext)
+	}
+
+	// Update API is not supported, recreate if anything changes.
+	return !proto.Equal(oldGtpu, newGtpu)
 }
 
 // Dependencies lists dependencies for a VPP interface.

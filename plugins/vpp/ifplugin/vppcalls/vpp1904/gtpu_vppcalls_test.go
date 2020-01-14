@@ -58,6 +58,41 @@ func TestAddGtpuTunnel(t *testing.T) {
 	Expect(msgCheck).To(BeTrue())
 }
 
+func TestAddGtpuTunnelModernTeid(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_gtpu.GtpuAddDelTunnelReply{
+		SwIfIndex: 1,
+	})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
+
+	swIfIdx, err := ifHandler.AddGtpuTunnel("ifName", &ifs.GtpuLink{
+		SrcAddr:    "10.0.0.1",
+		DstAddr:    "20.0.0.1",
+		EncapVrfId: 10,
+		SrcTeid:    900,
+		DstTeid:    900,
+	}, 2)
+	Expect(err).To(BeNil())
+	Expect(swIfIdx).To(BeEquivalentTo(1))
+	var msgCheck bool
+	for _, msg := range ctx.MockChannel.Msgs {
+		vppMsg, ok := msg.(*vpp_gtpu.GtpuAddDelTunnel)
+		if ok {
+			Expect(vppMsg.SrcAddress).To(BeEquivalentTo(net.ParseIP("10.0.0.1").To4()))
+			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("20.0.0.1").To4()))
+			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
+			Expect(vppMsg.EncapVrfID).To(BeEquivalentTo(10))
+			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(2))
+			Expect(vppMsg.Teid).To(BeEquivalentTo(900))
+			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
+			msgCheck = true
+		}
+	}
+	Expect(msgCheck).To(BeTrue())
+}
+
 func TestAddGtpuTunnelIPv6(t *testing.T) {
 	ctx, ifHandler := ifTestSetup(t)
 	defer ctx.TeardownTestCtx()
@@ -154,6 +189,23 @@ func TestAddGtpuTunnelError(t *testing.T) {
 		DstAddr:    "20.0.0.2",
 		EncapVrfId: 0,
 		Teid:       100,
+	}, 0xFFFFFFFF)
+	Expect(err).ToNot(BeNil())
+}
+
+func TestAddGtpuTunnelTeidMismatch(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_gtpu.GtpuAddDelTunnel{})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
+
+	_, err := ifHandler.AddGtpuTunnel("ifName", &ifs.GtpuLink{
+		SrcAddr:    "10.0.0.1",
+		DstAddr:    "20.0.0.2",
+		EncapVrfId: 0,
+		SrcTeid:    200,
+		DstTeid:    900,
 	}, 0xFFFFFFFF)
 	Expect(err).ToNot(BeNil())
 }

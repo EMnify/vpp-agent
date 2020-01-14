@@ -489,7 +489,8 @@ func TestDumpInterfacesGtpu(t *testing.T) {
 				SrcAddress: ipv61Parse,
 				DstAddress: ipv62Parse,
 				EncapVrfID: 16,
-				Teid:       100,
+				SrcTeid:    100,
+				DstTeid:    200,
 			},
 		},
 	})
@@ -504,5 +505,7 @@ func TestDumpInterfacesGtpu(t *testing.T) {
 	Expect(intface.GetGtpu().SrcAddr).To(Equal("dead:beef:feed:face:cafe:babe:baad:c0de"))
 	Expect(intface.GetGtpu().DstAddr).To(Equal("d3ad:beef:feed:face:cafe:babe:baad:c0de"))
 	Expect(intface.GetGtpu().EncapVrfId).To(Equal(uint32(16)))
-	Expect(intface.GetGtpu().Teid).To(Equal(uint32(100)))
+	Expect(intface.GetGtpu().Teid).To(Equal(uint32(0)))
+	Expect(intface.GetGtpu().SrcTeid).To(Equal(uint32(100)))
+	Expect(intface.GetGtpu().DstTeid).To(Equal(uint32(200)))
 }

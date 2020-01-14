@@ -110,12 +110,23 @@ type InterfaceSpanDetails struct {
 	IsL2          uint8
 }
 
+// Feature identifies a particular API feature
+type Feature uint32
+
+const (
+	// FeatureGtpuUpdateTunnelDst indicates support for GTPU tunnel destination update.
+	FeatureGtpuUpdateTunnelDst Feature = 1
+)
+
 // InterfaceVppAPI provides methods for creating and managing interface plugin
 type InterfaceVppAPI interface {
 	InterfaceVppRead
 
 	MemifAPI
 	Wmxnet3API
+
+	// IsFeatureSupported indicates whether or not a particular API feature is supported.
+	IsFeatureSupported(Feature) bool
 
 	// AddAfPacketInterface calls AfPacketCreate VPP binary API.
 	AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *interfaces.AfpacketLink) (swIndex uint32, err error)
@@ -166,6 +177,8 @@ type InterfaceVppAPI interface {
 	AddGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink, multicastIf uint32) (uint32, error)
 	// DelGtpuTunnel removes GTPU interface.
 	DelGtpuTunnel(ifName string, gtpuLink *interfaces.GtpuLink) error
+	// UpdateGtpuTunnelDst updates the destination IP and TEID of a GTPU interface.
+	UpdateGtpuTunnelDst(ifIdx uint32, gtpuLink *interfaces.GtpuLink, multicastIf uint32) error
 
 	// CreateSubif creates sub interface.
 	CreateSubif(ifIdx, vlanID uint32) (swIfIdx uint32, err error)

@@ -30,7 +30,11 @@ func (h *InterfaceVppHandler) gtpuAddDelTunnel(isAdd uint8, gtpuLink *interfaces
 		IsAdd:          isAdd,
 		McastSwIfIndex: multicastIf,
 		EncapVrfID:     gtpuLink.EncapVrfId,
-		Teid:           gtpuLink.Teid,
+		Teid:           gtpuLink.Teid | gtpuLink.DstTeid,
+	}
+
+	if gtpuLink.Teid|gtpuLink.DstTeid != gtpuLink.Teid|gtpuLink.SrcTeid {
+		return 0, errors.New("different src/dst TEIDs not supported")
 	}
 
 	if gtpuLink.DecapNext == interfaces.GtpuLink_DEFAULT {
@@ -115,6 +119,11 @@ func (h *InterfaceVppHandler) DelGtpuTunnel(ifName string, gtpuLink *interfaces.
 		return err
 	}
 	return h.RemoveInterfaceTag(ifName, swIfIndex)
+}
+
+// UpdateGtpuTunnelDst updates the destination IP and TEID of a GTPU interface.
+func (h *InterfaceVppHandler) UpdateGtpuTunnelDst(ifIdx uint32, gtpuLink *interfaces.GtpuLink, multicastIf uint32) error {
+	return errors.New("unsupported")
 }
 
 // dumpGtpuDetails dumps GTP-U interface details from VPP and fills them into the provided interface map.

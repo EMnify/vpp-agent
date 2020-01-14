@@ -324,9 +324,14 @@ message GtpuLink {
     // Name of multicast interface
     string multicast = 3;
     // Tunnel endpoint identifier
+    // Kept for backward compatibility, use src_teid and dst_teid instead.
     uint32 teid = 4;
     // VRF id for the encapsulated packets
     uint32 encap_vrf_id = 5;
     // Next VPP node after decapsulation
     NextNode decap_next = 6;
+    // Local Tunnel endpoint identifier (locally assigned, seen in incoming packets)
+    uint32 src_teid = 7;
+    // Remote Tunnel endpoint identifier (remotely assigned, set in outgoing packets)
+    uint32 dst_teid = 8;
 }

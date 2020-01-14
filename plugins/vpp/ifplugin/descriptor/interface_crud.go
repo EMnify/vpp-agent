@@ -363,6 +363,36 @@ func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.In
 		}
 	}
 
+	// update GTPU tunnel destination
+	if newIntf.Type == interfaces.Interface_GTPU_TUNNEL {
+		if newGtpu, oldGtpu := newIntf.GetGtpu(), oldIntf.GetGtpu();
+			newGtpu.DstAddr != oldGtpu.DstAddr ||
+			newGtpu.Multicast != oldGtpu.Multicast ||
+			newGtpu.Teid|newGtpu.DstTeid != oldGtpu.Teid|oldGtpu.DstTeid {
+
+			var multicastIfIdx uint32
+			multicastIf := newIntf.GetGtpu().GetMulticast()
+			if multicastIf != "" {
+				multicastMeta, found := d.intfIndex.LookupByName(multicastIf)
+				if !found {
+					err = errors.Errorf("failed to find multicast interface %s referenced by GTPU %s",
+						multicastIf, newIntf.Name)
+					d.log.Error(err)
+					return nil, err
+				}
+				multicastIfIdx = multicastMeta.SwIfIndex
+			} else {
+				// not a multicast tunnel
+				multicastIfIdx = 0xFFFFFFFF
+			}
+
+			if err := d.ifHandler.UpdateGtpuTunnelDst(ifIdx, newIntf.GetGtpu(), multicastIfIdx); err != nil {
+				d.log.Error(err)
+				return nil, err
+			}
+		}
+	}
+
 	// update metadata
 	oldMetadata.IPAddresses = newIntf.IpAddresses
 	oldMetadata.Vrf = newIntf.Vrf

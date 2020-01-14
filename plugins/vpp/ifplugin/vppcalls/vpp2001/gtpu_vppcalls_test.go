@@ -37,6 +37,42 @@ func TestAddGtpuTunnel(t *testing.T) {
 		SrcAddr:    "10.0.0.1",
 		DstAddr:    "20.0.0.1",
 		EncapVrfId: 10,
+		SrcTeid:    100,
+		DstTeid:    200,
+	}, 2)
+	Expect(err).To(BeNil())
+	Expect(swIfIdx).To(BeEquivalentTo(1))
+	var msgCheck bool
+	for _, msg := range ctx.MockChannel.Msgs {
+		vppMsg, ok := msg.(*vpp_gtpu.GtpuAddDelTunnel)
+		if ok {
+			Expect(vppMsg.SrcAddress).To(BeEquivalentTo(net.ParseIP("10.0.0.1").To4()))
+			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("20.0.0.1").To4()))
+			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
+			Expect(vppMsg.EncapVrfID).To(BeEquivalentTo(10))
+			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(2))
+			Expect(vppMsg.SrcTeid).To(BeEquivalentTo(100))
+			Expect(vppMsg.DstTeid).To(BeEquivalentTo(200))
+			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
+			msgCheck = true
+		}
+	}
+	Expect(msgCheck).To(BeTrue())
+}
+
+func TestAddGtpuTunnelLegacyTeid(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_gtpu.GtpuAddDelTunnelReply{
+		SwIfIndex: 1,
+	})
+	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
+
+	swIfIdx, err := ifHandler.AddGtpuTunnel("ifName", &ifs.GtpuLink{
+		SrcAddr:    "10.0.0.1",
+		DstAddr:    "20.0.0.1",
+		EncapVrfId: 10,
 		Teid:       100,
 	}, 2)
 	Expect(err).To(BeNil())
@@ -50,7 +86,8 @@ func TestAddGtpuTunnel(t *testing.T) {
 			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
 			Expect(vppMsg.EncapVrfID).To(BeEquivalentTo(10))
 			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(2))
-			Expect(vppMsg.Teid).To(BeEquivalentTo(100))
+			Expect(vppMsg.SrcTeid).To(BeEquivalentTo(100))
+			Expect(vppMsg.DstTeid).To(BeEquivalentTo(100))
 			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
 			msgCheck = true
 		}
@@ -247,5 +284,136 @@ func TestDelNilGtpuTunnel(t *testing.T) {
 	ctx.MockVpp.MockReply(&vpp_ifs.SwInterfaceTagAddDelReply{})
 
 	err := ifHandler.DelGtpuTunnel("ifName", nil)
+	Expect(err).ToNot(BeNil())
+}
+
+func TestUpdateGtpuTunnelDst(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_gtpu.GtpuSetTunnelDstReply{})
+
+	err := ifHandler.UpdateGtpuTunnelDst(99, &ifs.GtpuLink{
+		SrcAddr:    "10.0.0.1",
+		DstAddr:    "20.0.0.1",
+		EncapVrfId: 10,
+		SrcTeid:    100,
+		DstTeid:    200,
+	}, 11)
+	Expect(err).To(BeNil())
+	var msgCheck bool
+	for _, msg := range ctx.MockChannel.Msgs {
+		vppMsg, ok := msg.(*vpp_gtpu.GtpuSetTunnelDst)
+		if ok {
+			Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(99))
+			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(11))
+            Expect(vppMsg.DstTeid).To(BeEquivalentTo(200));
+			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("20.0.0.1").To4()))
+			msgCheck = true
+		}
+	}
+	Expect(msgCheck).To(BeTrue())
+}
+
+func TestUpdateGtpuTunnelDstLegacyTeid(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_gtpu.GtpuSetTunnelDstReply{})
+
+	err := ifHandler.UpdateGtpuTunnelDst(99, &ifs.GtpuLink{
+		SrcAddr:    "10.0.0.1",
+		DstAddr:    "20.0.0.1",
+		EncapVrfId: 10,
+		Teid:       200,
+	}, 11)
+	Expect(err).To(BeNil())
+	var msgCheck bool
+	for _, msg := range ctx.MockChannel.Msgs {
+		vppMsg, ok := msg.(*vpp_gtpu.GtpuSetTunnelDst)
+		if ok {
+			Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(99))
+			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(11))
+            Expect(vppMsg.DstTeid).To(BeEquivalentTo(200));
+			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("20.0.0.1").To4()))
+			msgCheck = true
+		}
+	}
+	Expect(msgCheck).To(BeTrue())
+}
+
+func TestUpdateGtpuTunnelDstIPv6(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_gtpu.GtpuSetTunnelDstReply{})
+
+	err := ifHandler.UpdateGtpuTunnelDst(99, &ifs.GtpuLink{
+		SrcAddr:    "2001:db8:0:1:1:1:1:1",
+		DstAddr:    "2002:db8:0:1:1:1:1:1",
+		EncapVrfId: 10,
+		SrcTeid:    100,
+		DstTeid:    200,
+	}, 11)
+	Expect(err).To(BeNil())
+	var msgCheck bool
+	for _, msg := range ctx.MockChannel.Msgs {
+		vppMsg, ok := msg.(*vpp_gtpu.GtpuSetTunnelDst)
+		if ok {
+			Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(99))
+			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(11))
+            Expect(vppMsg.DstTeid).To(BeEquivalentTo(200));
+			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("2002:db8:0:1:1:1:1:1").To16()))
+			msgCheck = true
+		}
+	}
+	Expect(msgCheck).To(BeTrue())
+}
+
+func TestUpdateGtpuTunnelDstMismatch(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_gtpu.GtpuSetTunnelDstReply{})
+
+	err := ifHandler.UpdateGtpuTunnelDst(99, &ifs.GtpuLink{
+		SrcAddr:    "2001:db8:0:1:1:1:1:1",
+		DstAddr:    "20.0.0.1",
+		EncapVrfId: 10,
+		SrcTeid:    100,
+		DstTeid:    200,
+	}, 11)
+	Expect(err).ToNot(BeNil())
+}
+
+func TestUpdateGtpuTunnelDstMismatch2(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_gtpu.GtpuSetTunnelDstReply{})
+
+	err := ifHandler.UpdateGtpuTunnelDst(99, &ifs.GtpuLink{
+		SrcAddr:    "10.0.0.1",
+		DstAddr:    "2002:db8:0:1:1:1:1:1",
+		EncapVrfId: 10,
+		SrcTeid:    100,
+		DstTeid:    200,
+	}, 11)
+	Expect(err).ToNot(BeNil())
+}
+
+func TestUpdateGtpuTunnelDstSameIP(t *testing.T) {
+	ctx, ifHandler := ifTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&vpp_gtpu.GtpuSetTunnelDstReply{})
+
+	err := ifHandler.UpdateGtpuTunnelDst(99, &ifs.GtpuLink{
+		SrcAddr:    "20.0.0.1",
+		DstAddr:    "20.0.0.1",
+		EncapVrfId: 10,
+		SrcTeid:    100,
+		DstTeid:    200,
+	}, 11)
 	Expect(err).ToNot(BeNil())
 }
