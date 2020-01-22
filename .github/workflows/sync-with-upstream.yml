@@ -1,0 +1,22 @@
+name: Synchronize with the upstream
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  synchronize:
+    name: "Synchronize with the upstream"
+    runs-on: ubuntu-18.04
+
+    steps:
+      - uses: actions/checkout@v1
+      - run: |
+          set -xeuo pipefail
+          git remote add upstream https://github.com/ligato/vpp-agent.git
+          git fetch upstream
+          for branch in master dev; do
+            git checkout -b upstream-${branch} --track origin/upstream-${branch}
+            git reset --hard upstream/${branch}
+            git push "https://${GITHUB_ACTOR}:${{secrets.GITHUB_TOKEN}}@github.com/${GITHUB_REPOSITORY}.git"
+          done
