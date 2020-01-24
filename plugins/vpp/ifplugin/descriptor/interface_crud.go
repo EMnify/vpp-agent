@@ -365,8 +365,7 @@ func (d *InterfaceDescriptor) Update(key string, oldIntf, newIntf *interfaces.In
 
 	// update GTPU tunnel destination
 	if newIntf.Type == interfaces.Interface_GTPU_TUNNEL {
-		if newGtpu, oldGtpu := newIntf.GetGtpu(), oldIntf.GetGtpu();
-			newGtpu.DstAddr != oldGtpu.DstAddr ||
+		if newGtpu, oldGtpu := newIntf.GetGtpu(), oldIntf.GetGtpu(); newGtpu.DstAddr != oldGtpu.DstAddr ||
 			newGtpu.Multicast != oldGtpu.Multicast ||
 			newGtpu.Teid|newGtpu.DstTeid != oldGtpu.Teid|oldGtpu.DstTeid {
 

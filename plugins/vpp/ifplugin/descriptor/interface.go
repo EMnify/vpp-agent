@@ -413,7 +413,7 @@ func (d *InterfaceDescriptor) equivalentGtpu(oldGtpu, newGtpu *interfaces.GtpuLi
 		oldGtpu.EncapVrfId == newGtpu.EncapVrfId &&
 		oldGtpu.DecapNext == newGtpu.DecapNext &&
 		oldGtpu.Teid|oldGtpu.SrcTeid == newGtpu.Teid|newGtpu.SrcTeid &&
-		oldGtpu.Teid|oldGtpu.DstTeid == newGtpu.Teid|newGtpu.DstTeid;
+		oldGtpu.Teid|oldGtpu.DstTeid == newGtpu.Teid|newGtpu.DstTeid
 }
 
 // MetadataFactory is a factory for index-map customized for VPP interfaces.

@@ -307,7 +307,7 @@ func TestUpdateGtpuTunnelDst(t *testing.T) {
 		if ok {
 			Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(99))
 			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(11))
-            Expect(vppMsg.DstTeid).To(BeEquivalentTo(200));
+			Expect(vppMsg.DstTeid).To(BeEquivalentTo(200))
 			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("20.0.0.1").To4()))
 			msgCheck = true
 		}
@@ -334,7 +334,7 @@ func TestUpdateGtpuTunnelDstLegacyTeid(t *testing.T) {
 		if ok {
 			Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(99))
 			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(11))
-            Expect(vppMsg.DstTeid).To(BeEquivalentTo(200));
+			Expect(vppMsg.DstTeid).To(BeEquivalentTo(200))
 			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("20.0.0.1").To4()))
 			msgCheck = true
 		}
@@ -362,7 +362,7 @@ func TestUpdateGtpuTunnelDstIPv6(t *testing.T) {
 		if ok {
 			Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(99))
 			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(11))
-            Expect(vppMsg.DstTeid).To(BeEquivalentTo(200));
+			Expect(vppMsg.DstTeid).To(BeEquivalentTo(200))
 			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("2002:db8:0:1:1:1:1:1").To16()))
 			msgCheck = true
 		}
