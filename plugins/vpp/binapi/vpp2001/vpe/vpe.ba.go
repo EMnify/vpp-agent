@@ -26,7 +26,7 @@ const (
 	// ModuleName is the name of this module.
 	ModuleName = "vpe"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0xc6c0bcf6
+	VersionCrc = 0x114d775
 )
 
 // LogLevel represents VPP binary API enum 'log_level'.
@@ -470,7 +470,7 @@ func (*ShowVersion) GetMessageType() api.MessageType {
 type ShowVersionReply struct {
 	Retval         int32
 	Program        string `struc:"[32]byte"`
-	Version        string `struc:"[32]byte"`
+	Version        string `struc:"[64]byte"`
 	BuildDate      string `struc:"[32]byte"`
 	BuildDirectory string `struc:"[256]byte"`
 }
@@ -479,7 +479,7 @@ func (*ShowVersionReply) GetMessageName() string {
 	return "show_version_reply"
 }
 func (*ShowVersionReply) GetCrcString() string {
-	return "c919bde1"
+	return "40545667"
 }
 func (*ShowVersionReply) GetMessageType() api.MessageType {
 	return api.ReplyMessage
