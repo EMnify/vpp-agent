@@ -20,3 +20,12 @@ jobs:
             git reset --hard upstream/${branch}
             git push "https://${GITHUB_ACTOR}:${{secrets.GITHUB_TOKEN}}@github.com/${GITHUB_REPOSITORY}.git"
           done
+      - name: Post notification to Slack if failed
+        if: failure()
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        uses: voxmedia/github-action-slack-notify-build@v1
+        with:
+          channel: squad-dp
+          status: FAILED
+          color: danger
