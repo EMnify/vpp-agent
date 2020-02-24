@@ -18,12 +18,11 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-
 	"github.com/ligato/cn-infra/idxmap"
 	"github.com/ligato/cn-infra/idxmap/mem"
 	"github.com/ligato/cn-infra/logging"
 
-	linux_namespace "go.ligato.io/vpp-agent/v2/proto/ligato/linux/namespace"
+	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 )
 
 // LinuxIfMetadataIndex provides read-only access to mapping with Linux interface

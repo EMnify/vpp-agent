@@ -22,10 +22,10 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	ba_nat "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/nat"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	nat "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/nat"
+	ba_nat "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/nat"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	nat "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/nat"
 )
 
 // DNATs sorted by tags
@@ -36,6 +36,28 @@ type stMappingMap map[string][]*nat.DNat44_StaticMapping
 
 // identity mappings sorted by tags
 type idMappingMap map[string][]*nat.DNat44_IdentityMapping
+
+// default virtual reassembly configuration
+const (
+	natReassTimeoutDefault = 2 // seconds
+	natMaxReassDefault     = 1024
+	natMaxFragDefault      = 5
+	natDropFragDefault     = false
+)
+
+func (h *NatVppHandler) DefaultNat44GlobalConfig() *nat.Nat44Global {
+	return &nat.Nat44Global{
+		Forwarding:    false,
+		NatInterfaces: nil,
+		AddressPool:   nil,
+		VirtualReassembly: &nat.VirtualReassembly{
+			Timeout:         natReassTimeoutDefault,
+			MaxReassemblies: natMaxReassDefault,
+			MaxFragments:    natMaxFragDefault,
+			DropFragments:   natDropFragDefault,
+		},
+	}
+}
 
 // Nat44GlobalConfigDump dumps global NAT44 config in NB format.
 func (h *NatVppHandler) Nat44GlobalConfigDump(dumpDeprecated bool) (cfg *nat.Nat44Global, err error) {

@@ -21,10 +21,10 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	ifplugin_vppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
-	vpp_interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	ifplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
+	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
 )
 
 func TestInterfaceIP(t *testing.T) {
@@ -83,7 +83,7 @@ func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 	}
 
 	// Set AdminUp and test again
-	err = h.InterfaceAdminUp(ifIdx0)
+	err = h.InterfaceAdminUp(test.Context, ifIdx0)
 	if err != nil {
 		t.Fatalf("enabling interface failed: %v", err)
 	}
@@ -103,7 +103,7 @@ func TestInterfaceEnabledFieldWithLoopback(t *testing.T) {
 	}
 
 	// Set AdminDown and test again
-	err = h.InterfaceAdminDown(ifIdx0)
+	err = h.InterfaceAdminDown(test.Context, ifIdx0)
 	if err != nil {
 		t.Fatalf("disabling interface failed: %v", err)
 	}
@@ -164,7 +164,7 @@ func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
 	}
 
 	// Set AdminUp and test again
-	err = h.InterfaceAdminUp(memifIdx)
+	err = h.InterfaceAdminUp(test.Context, memifIdx)
 	if err != nil {
 		t.Fatalf("enabling interface failed: %v", err)
 	}
@@ -184,7 +184,7 @@ func TestInterfaceEnabledFieldWithMemif(t *testing.T) {
 	}
 
 	// Set AdminDown and test again
-	err = h.InterfaceAdminDown(memifIdx)
+	err = h.InterfaceAdminDown(test.Context, memifIdx)
 	if err != nil {
 		t.Fatalf("disabling interface failed: %v", err)
 	}

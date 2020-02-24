@@ -4,6 +4,12 @@
 
 ## Release Notes
 
+- [v3.0.0](#v3.0.0)
+  - [v3.0.1](#v3.0.1)
+- [v2.5.0](#v2.5.0)
+  - [v2.5.1](#v2.5.1)
+- [v2.4.0](#v2.4.0)
+- [v2.3.0](#v2.3.0)
 - [v2.2.0](#v2.2.0)
 - [v2.2.0-beta](#v2.2.0-beta)
 - [v2.1.0](#v2.1.0)
@@ -35,16 +41,149 @@
 RELEASE CHANGELOG TEMPLATE:
 <a name="vX.Y.Z"></a>
 # [X.Y.Z](https://github.com/ligato/vpp-agent/compare/vX-1.Y-1.Z-1...vX.Y.Z) (YYYY-MM-DD)
-### Compatibility
+### COMPATIBILITY
+### KNOWN ISSUES
 ### BREAKING CHANGES
 ### Bug Fixes
-### Known Issues
 ### Features
 ### Improvements
 ### Docker Images
 ### Documentation
 -->
 
+<a name="v3.0.1"></a>
+# [3.0.1](https://github.com/ligato/vpp-agent/compare/v3.0.0...v3.0.1) (2020-02-20)
+
+### Bug Fixes
+* fix: Add missing models to ConfigData (https://github.com/ligato/vpp-agent/pull/1625)
+
+<a name="v3.0.0"></a>
+# [3.0.0](https://github.com/ligato/vpp-agent/compare/v2.5.0...master) (2020-02-10)
+
+### COMPATIBILITY
+- **VPP 20.01** (default)
+- **VPP 19.08.1** (recommended)
+- **VPP 19.04.4**
+
+### KNOWN ISSUES
+- VPP L3 plugin: `IPScanNeighbor` was disabled for VPP 20.01 due to VPP API changes (will be implemented later using new model)
+- VPP NAT plugin: `VirtualReassembly` in `Nat44Global` was disabled for VPP 20.01 due to VPP API changes (will be implemented later in VPP L3 plugin using new model)
+
+### BREAKING CHANGES
+- migrate from dep to Go modules for dependency management and remove vendor directory (#1599)
+- use vanity import path  `go.ligato.io/vpp-agent/v3` in Go files (#1599)
+- move all _.proto_ files into `proto/ligato` directory and add check for breaking changes (#1599)
+
+### Bug Fixes
+- check for duplicate Linux interface IP address (#1586)
+
+### New Features
+- VPP interface plugin: Allow AF-PACKET to reference target Linux interface via logical name (#1616)
+- VPP L3 plugin: add support for L3 cross-connects (#1602)
+- VPP L3 plugin: IP flow hash settings support (#1610)
+- VPP NAT plugin: NAT interface and AddressPool API changes (#1595)
+- VPP plugins: support disabling VPP plugins (#1593)
+- VPP client: add support for govpp proxy (#1593)
+
+### Improvements
+- optimize getting model keys, with up to 20% faster transactions (#1615)
+- agentctl output formatting improvements (#1581, #1582, #1589)
+- generated VPP binary API now imports common types from `*_types` packages
+- development docker images now have smaller size (~400MB less)
+- start using Github Workflows for CI/CD pipeline
+- add gRPC reflection service
+
+<a name="v2.5.1"></a>
+# [2.5.1](https://github.com/ligato/vpp-agent/compare/v2.5.0...v2.5.1) (2019-12-06)
+
+### COMPATIBILITY
+- **VPP 20.01-379** (`20.01-rc0~379-ga6b93eac5`)
+- **VPP 20.01-324** (`20.01-rc0~324-g66a332cf1`)
+- **VPP 19.08.1** (default)
+- **VPP 19.04** (backward compatible)
+- cn-infra v2.2
+
+### Bug Fixes
+* Fix linux interface dump ([#1577](https://github.com/ligato/vpp-agent/pull/1577))
+* Fix VRF for SR policy ([#1578](https://github.com/ligato/vpp-agent/pull/1578))
+
+<a name="v2.5.0"></a>
+# [2.5.0](https://github.com/ligato/vpp-agent/compare/v2.4.0...v2.5.0) (2019-11-29)
+
+### Compatibility
+- **VPP 20.01-379** (`20.01-rc0~379-ga6b93eac5`)
+- **VPP 20.01-324** (`20.01-rc0~324-g66a332cf1`)
+- **VPP 19.08.1** (default)
+- **VPP 19.04** (backward compatible)
+- cn-infra v2.2
+
+### New Features
+* SRv6 global config (encap source address)
+* Support for Linux configuration dumping
+
+### Bug Fixes
+* Update GoVPP with fix for stats conversion panic 
+
+<a name="v2.4.0"></a>
+# [2.4.0](https://github.com/ligato/vpp-agent/compare/v2.3.0...v2.4.0) (2019-10-21)
+
+### Compatibility
+- **VPP 20.01-379** (`20.01-rc0~379-ga6b93eac5`)
+- **VPP 20.01-324** (`20.01-rc0~324-g66a332cf1`)
+- **VPP 19.08.1** (default)
+- **VPP 19.04** (backward compatible)
+- cn-infra v2.2
+
+### New Features
+This release introduces compatibility with two different commits of the VPP 20.01. Previously compatible version was updated to commit `324-g66a332cf1`, and support for `379-ga6b93eac5` was added. Other previous versions remained.
+* [Telemetry][vpp-telemetry]
+  - Added `StatsPoller` service periodically retrieving VPP stats.
+
+<a name="v2.3.0"></a>
+# [2.3.0](https://github.com/ligato/vpp-agent/compare/v2.2.0...v2.3.0) (2019-10-04)
+
+### Compatibility
+- **VPP 20.01** (`20.01-rc0~161-ge5948fb49~b3570`)
+- **VPP 19.08.1** (default)
+- **VPP 19.04** (backward compatible)
+- cn-infra v2.2
+
+VPP support for version 19.08 was updated to 19.08.1. 
+Support for 19.01 was dropped in this release. 
+
+### Bug Fixes
+* Linux interfaces with 'EXISTING' type should be resynced properly.
+* Resolved issue with SRv6 removal.
+* AgentCTL dump command fixed.
+* ACL ICMP rule is now properly configured and data can be obtained using the ACL dump.
+* Missing dependency for SRv6 L2 steering fixed.
+* Fixed issue with possible division by zero and missing interface MTU.
+* Namespace plugin uses a Docker event listener instead of periodical polling. This should prevent cases where quickly started microservice container was not detected.
+
+### New Features
+* [netalloc-plugin][netalloc-plugin]
+  - A new plugin called netalloc which allows disassociating topology from addressing in the network configuration. Interfaces, routes and other network objects' addresses can be symbolic references into the pool of allocated addresses known to netalloc plugin. See [model][netalloc-plugin-model] for more information.
+* [if-plugin][vpp-interface-plugin]
+  - Added support for GRE tunnel interfaces. Choose the `GRE_TUNNEL` interface type with appropriate link data.
+* [agentctl][agentctl]
+  - Many new features and enhancements added to the AgentCTL:
+    * version is defined as a parameter for root command instead of the separate command  
+    * ETCD endpoints can be defined via the `ETCD_ENDPOINTS` environment variable
+    * sub-command `config` supports `get/put/del` commands
+    * `model` sub-commands improved
+    * added VPP command to manage VPP instance
+  Additionally, starting with this release the AgentCTL is a VPP-Agent main control tool and the vpp-agent-ctl was definitely removed.      
+
+### Improvements
+Many end-to-end tests introduced, gradually increasing VPP-Agent stability.
+* [if-plugin][vpp-interface-plugin]
+  - IP addresses assigned by the DHCP are excluded from the interface address descriptor.
+  - VPP-Agent now processes status change notifications labeled by the VPP as UNKNOWN.
+* [ns-plugin][linux-ns-plugin]
+  - Dockerclient microservice polling replaced with an event listener.   
+* [sr-plugin][sr-plugin]
+  - SRv6 dynamic proxy routing now can be connected to a non-zero VRF table.   
+  
 <a name="v2.2.0"></a>
 # [2.2.0](https://github.com/ligato/vpp-agent/compare/v2.2.0-beta...v2.2.0) (2019-08-26)
 
@@ -67,6 +206,70 @@ RELEASE CHANGELOG TEMPLATE:
 
 ### Documentation
 - Updated documentation comments in the protobuf API.
+
+<a name="v2.2.0-beta"></a>
+# [2.2.0-beta](https://github.com/ligato/vpp-agent/compare/v2.1.1...v2.2.0-beta) (2019-08-09)
+
+### Compatibility
+- **VPP 19.08** (rc1)
+- **VPP 19.04** (default)
+- **VPP 19.01** (backward compatible)
+
+### Bug Fixes
+* Fixed SRv6 localsid delete case for non-zero VRF tables.
+* Fixed interface IPv6 detection in the descriptor.
+* Various bugs fixed in KV scheduler TXN post-processing.
+* Interface plugin config names fixed, no stats publishers are now used by default. Instead, datasync is used (by default ETCD, Redis and Consul).
+* Rx-placement and rx-mode is now correctly dependent on interface link state.
+* Fixed crash for iptables rulechain with default microservice.
+* Punt dump fixed in all supported VPP versions.
+* Removal of registered punt sockets fixed after a resync.
+* Punt socket paths should no longer be unintentionally recreated.
+* IP redirect is now correctly dependent on RX interface.
+* Fixed IPSec security association configuration for tunnel mode.
+* Fixed URL for VPP metrics in telemetry plugin
+* Routes are now properly dependent on VRF.
+
+### New Features
+* Defined new environment variable `DISABLE_INTERFACE_STATS` to generally disable interface plugin stats.
+* Defined new environment variable `RESYNC_TIMEOU` to override default resync timeout. 
+* Added [ETCD ansible python plugin][ansible] with example playbook. Consult [readme](ansible/README.md) for more information.
+
+### Improvements
+* [govppmux-plugin][govppmux-plugin]
+  - GoVPPMux stats can be read with rest under path `/govppmux/stats`.
+  - Added disabling of interface stats via the environment variable `DISABLE_INTERFACE_STATS`.
+  - Added disabling of interface status publishing via environment variable `DISABLE_STATUS_PUBLISHING`.
+* [kv-scheduler][kv-scheduler]
+  - Added some more performance improvements.
+  - The same key can be no more matched by multiple descriptors.
+* [abf-plugin][vpp-abf-plugin]
+  - ABF plugin was added to config data model and is now initialized in configurator.  
+* [if-plugin][vpp-interface-plugin]
+  - Interface rx-placement and rx-mode was enhanced and now allows per-queue configuration.
+  - Added [examples](examples/kvscheduler/rxplacement) for rx-placement and rx-mode.
+* [nat-plugin][vpp-nat-plugin]
+  - NAT example updated for VPP 19.04
+* [l3-plugin][vpp-l3-plugin]  
+  - Route keys were changed to prevent collisions with some types of configuration. Route with outgoing interface now contains the interface name in the key.
+  - Added support for DHCP proxy. A new descriptor allows calling CRUD operations to VPP DHCP proxy servers.
+* [punt-plugin][vpp-punt-plugin]
+  - Added support for Punt exceptions.  
+  - IP redirect dump was implemented for VPP 19.08.
+* [Telemetry][vpp-telemetry]
+  - Interface metrics added to telemetry plugin. Note that the URL for prometheus export was changed to `/metrics/vpp`.
+  - Plugin configuration file now has an option to skip certain metrics.
+* [rest-plugin][rest-plugin]
+  - Added support for IPSec plugin
+  - Added support for punt plugin  
+* [agentctl][agentctl]
+  - We continuously update the new CTL tool. Various bugs were fixed some new features added.
+  - Added new command `import` which can import configuration from file. 
+
+### Docker Images
+* The supervisor was replaced with VPP-Agent init plugin. 
+* Images now use pre-built VPP images from [ligato/vpp-base](https://github.com/ligato/vpp-base)
+
 
 <a name="v2.1.1"></a>
 # [2.1.1](https://github.com/ligato/vpp-agent/compare/v2.1.0...v2.1.1) (2019-04-05)
@@ -853,6 +1056,7 @@ Data replication and events:
   - remote client - for remote configuration of VPP Agent (while integrating for example with control plane)
 
 [agentctl]: cmd/agentctl
+[ansible]: ansible
 [configurator-plugin]: plugins/configurator
 [consul]: https://www.consul.io/
 [contiv-vpp1810]: https://github.com/vpp-dev/vpp/tree/stable-1801-contiv
@@ -875,6 +1079,8 @@ Data replication and events:
 [linux-ns-plugin]: plugins/linux/nsplugin
 [linux-plugins]: plugins/linux
 [nat-proto]: api/models/vpp/nat/nat.proto
+[netalloc-plugin]: plugins/netalloc
+[netalloc-plugin-model]: api/models/netalloc/netalloc.proto
 [ns-plugin]: plugins/linux/nsplugin
 [ns-proto]: api/models/linux/namespace/namespace.proto
 [models]: api/models

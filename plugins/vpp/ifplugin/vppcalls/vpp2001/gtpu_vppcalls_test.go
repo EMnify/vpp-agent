@@ -15,13 +15,13 @@
 package vpp2001_test
 
 import (
-	"net"
 	"testing"
 
 	. "github.com/onsi/gomega"
-	vpp_gtpu "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/gtpu"
-	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_gtpu "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/gtpu"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
+	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func TestAddGtpuTunnel(t *testing.T) {
@@ -46,14 +46,20 @@ func TestAddGtpuTunnel(t *testing.T) {
 	for _, msg := range ctx.MockChannel.Msgs {
 		vppMsg, ok := msg.(*vpp_gtpu.GtpuAddDelTunnel)
 		if ok {
-			Expect(vppMsg.SrcAddress).To(BeEquivalentTo(net.ParseIP("10.0.0.1").To4()))
-			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("20.0.0.1").To4()))
-			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
+			Expect(vppMsg.SrcAddress).To(Equal(ip_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{10, 0, 0, 1}),
+			}))
+			Expect(vppMsg.DstAddress).To(Equal(ip_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{20, 0, 0, 1}),
+			}))
+			Expect(vppMsg.IsAdd).To(BeTrue())
 			Expect(vppMsg.EncapVrfID).To(BeEquivalentTo(10))
 			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(2))
 			Expect(vppMsg.SrcTeid).To(BeEquivalentTo(100))
 			Expect(vppMsg.DstTeid).To(BeEquivalentTo(200))
-			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
+			Expect(vppMsg.SrcAddress.Af).To(Equal(ip_types.ADDRESS_IP4))
 			msgCheck = true
 		}
 	}
@@ -81,14 +87,20 @@ func TestAddGtpuTunnelLegacyTeid(t *testing.T) {
 	for _, msg := range ctx.MockChannel.Msgs {
 		vppMsg, ok := msg.(*vpp_gtpu.GtpuAddDelTunnel)
 		if ok {
-			Expect(vppMsg.SrcAddress).To(BeEquivalentTo(net.ParseIP("10.0.0.1").To4()))
-			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("20.0.0.1").To4()))
-			Expect(vppMsg.IsAdd).To(BeEquivalentTo(1))
+			Expect(vppMsg.SrcAddress).To(Equal(ip_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{10, 0, 0, 1}),
+			}))
+			Expect(vppMsg.DstAddress).To(Equal(ip_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{20, 0, 0, 1}),
+			}))
+			Expect(vppMsg.IsAdd).To(BeTrue())
 			Expect(vppMsg.EncapVrfID).To(BeEquivalentTo(10))
 			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(2))
 			Expect(vppMsg.SrcTeid).To(BeEquivalentTo(100))
 			Expect(vppMsg.DstTeid).To(BeEquivalentTo(100))
-			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(0))
+			Expect(vppMsg.SrcAddress.Af).To(Equal(ip_types.ADDRESS_IP4))
 			msgCheck = true
 		}
 	}
@@ -116,9 +128,18 @@ func TestAddGtpuTunnelIPv6(t *testing.T) {
 	for _, msg := range ctx.MockChannel.Msgs {
 		vppMsg, ok := msg.(*vpp_gtpu.GtpuAddDelTunnel)
 		if ok {
-			Expect(vppMsg.SrcAddress).To(BeEquivalentTo(net.ParseIP("2001:db8:0:1:1:1:1:1").To16()))
-			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("2002:db8:0:1:1:1:1:1").To16()))
-			Expect(vppMsg.IsIPv6).To(BeEquivalentTo(1))
+			Expect(vppMsg.SrcAddress).To(Equal(ip_types.Address{
+				Af: ip_types.ADDRESS_IP6,
+				Un: ip_types.AddressUnionIP6(ip_types.IP6Address{
+					0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0x01, 0, 0x01, 0, 0x01, 0, 0x01, 0, 0x01,
+				}),
+			}))
+			Expect(vppMsg.DstAddress).To(Equal(ip_types.Address{
+				Af: ip_types.ADDRESS_IP6,
+				Un: ip_types.AddressUnionIP6(ip_types.IP6Address{
+					0x20, 0x02, 0x0d, 0xb8, 0, 0, 0, 0x01, 0, 0x01, 0, 0x01, 0, 0x01, 0, 0x01,
+				}),
+			}))
 			msgCheck = true
 		}
 	}
@@ -308,7 +329,10 @@ func TestUpdateGtpuTunnelDst(t *testing.T) {
 			Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(99))
 			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(11))
 			Expect(vppMsg.DstTeid).To(BeEquivalentTo(200))
-			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("20.0.0.1").To4()))
+			Expect(vppMsg.DstAddress).To(Equal(ip_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{20, 0, 0, 1}),
+			}))
 			msgCheck = true
 		}
 	}
@@ -335,7 +359,10 @@ func TestUpdateGtpuTunnelDstLegacyTeid(t *testing.T) {
 			Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(99))
 			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(11))
 			Expect(vppMsg.DstTeid).To(BeEquivalentTo(200))
-			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("20.0.0.1").To4()))
+			Expect(vppMsg.DstAddress).To(Equal(ip_types.Address{
+				Af: ip_types.ADDRESS_IP4,
+				Un: ip_types.AddressUnionIP4(ip_types.IP4Address{20, 0, 0, 1}),
+			}))
 			msgCheck = true
 		}
 	}
@@ -363,7 +390,12 @@ func TestUpdateGtpuTunnelDstIPv6(t *testing.T) {
 			Expect(vppMsg.SwIfIndex).To(BeEquivalentTo(99))
 			Expect(vppMsg.McastSwIfIndex).To(BeEquivalentTo(11))
 			Expect(vppMsg.DstTeid).To(BeEquivalentTo(200))
-			Expect(vppMsg.DstAddress).To(BeEquivalentTo(net.ParseIP("2002:db8:0:1:1:1:1:1").To16()))
+			Expect(vppMsg.DstAddress).To(Equal(ip_types.Address{
+				Af: ip_types.ADDRESS_IP6,
+				Un: ip_types.AddressUnionIP6(ip_types.IP6Address{
+					0x20, 0x02, 0x0d, 0xb8, 0, 0, 0, 0x01, 0, 0x01, 0, 0x01, 0, 0x01, 0, 0x01,
+				}),
+			}))
 			msgCheck = true
 		}
 	}

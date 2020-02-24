@@ -21,11 +21,12 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001"
-	l2ba "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/l2"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
+	l2ba "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l2"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls"
 )
 
 func init() {
@@ -104,12 +105,12 @@ func ipToAddress(ipstr string) (addr l2ba.Address, err error) {
 		return l2ba.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
 	}
 	if ip4 := netIP.To4(); ip4 == nil {
-		addr.Af = l2ba.ADDRESS_IP6
+		addr.Af = ip_types.ADDRESS_IP6
 		var ip6addr l2ba.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
-		addr.Af = l2ba.ADDRESS_IP4
+		addr.Af = ip_types.ADDRESS_IP4
 		var ip4addr l2ba.IP4Address
 		copy(ip4addr[:], ip4)
 		addr.Un.SetIP4(ip4addr)

@@ -18,9 +18,9 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	vpp_ifs "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
-	vpp_tapv2 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/tapv2"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_ifs "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
+	vpp_tapv2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/tapv2"
+	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func TestAddTapInterfaceV2(t *testing.T) {
@@ -44,7 +44,7 @@ func TestAddTapInterfaceV2(t *testing.T) {
 	for _, msg := range ctx.MockChannel.Msgs {
 		vppMsg, ok := msg.(*vpp_tapv2.TapCreateV2)
 		if ok {
-			Expect(vppMsg.UseRandomMac).To(BeEquivalentTo(1))
+			Expect(vppMsg.UseRandomMac).To(BeTrue())
 			Expect(vppMsg.HostIfName).To(BeEquivalentTo([]byte("hostIf")))
 			msgCheck = true
 		}

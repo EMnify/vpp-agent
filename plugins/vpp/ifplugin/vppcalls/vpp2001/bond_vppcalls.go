@@ -15,8 +15,8 @@
 package vpp2001
 
 import (
-	vpp_bond "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/bond"
-	ifs "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	vpp_bond "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/bond"
+	ifs "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 func (h *InterfaceVppHandler) AddBondInterface(ifName string, mac string, bondLink *ifs.BondLink) (uint32, error) {
@@ -114,11 +114,4 @@ func getLoadBalance(lb ifs.BondLink_LoadBalance) vpp_bond.BondLbAlgo {
 		// L2
 		return 0
 	}
-}
-
-func boolToUint(input bool) uint8 {
-	if input {
-		return 1
-	}
-	return 0
 }

@@ -16,25 +16,26 @@ package descriptor
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/pkg/errors"
-
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/utils/addrs"
-	"go.ligato.io/vpp-agent/v2/pkg/models"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
-	netalloc_descr "go.ligato.io/vpp-agent/v2/plugins/netalloc/descriptor"
-	ifdescriptor "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
-	netalloc_api "go.ligato.io/vpp-agent/v2/proto/ligato/netalloc"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	"github.com/pkg/errors"
+
+	"go.ligato.io/vpp-agent/v3/pkg/models"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	netalloc_descr "go.ligato.io/vpp-agent/v3/plugins/netalloc/descriptor"
+	ifdescriptor "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
+	netalloc_api "go.ligato.io/vpp-agent/v3/proto/ligato/netalloc"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 const (
@@ -144,7 +145,7 @@ func (d *RouteDescriptor) Validate(key string, route *l3.Route) (err error) {
 
 // Create adds VPP static route.
 func (d *RouteDescriptor) Create(key string, route *l3.Route) (metadata interface{}, err error) {
-	err = d.routeHandler.VppAddRoute(route)
+	err = d.routeHandler.VppAddRoute(context.TODO(), route)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +155,7 @@ func (d *RouteDescriptor) Create(key string, route *l3.Route) (metadata interfac
 
 // Delete removes VPP static route.
 func (d *RouteDescriptor) Delete(key string, route *l3.Route, metadata interface{}) error {
-	err := d.routeHandler.VppDelRoute(route)
+	err := d.routeHandler.VppDelRoute(context.TODO(), route)
 	if err != nil {
 		return err
 	}

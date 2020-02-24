@@ -20,8 +20,8 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 // InterfaceDetails is the wrapper structure for the interface northbound API structure.
@@ -129,9 +129,9 @@ type InterfaceVppAPI interface {
 	IsFeatureSupported(Feature) bool
 
 	// AddAfPacketInterface calls AfPacketCreate VPP binary API.
-	AddAfPacketInterface(ifName string, hwAddr string, afPacketIntf *interfaces.AfpacketLink) (swIndex uint32, err error)
+	AddAfPacketInterface(ifName, hwAddr, targetHostIfName string) (swIndex uint32, err error)
 	// DeleteAfPacketInterface calls AfPacketDelete VPP binary API.
-	DeleteAfPacketInterface(ifName string, idx uint32, afPacketIntf *interfaces.AfpacketLink) error
+	DeleteAfPacketInterface(ifName string, idx uint32, targetHostIfName string) error
 
 	// AddLoopbackInterface calls CreateLoopback bin API.
 	AddLoopbackInterface(ifName string) (swIndex uint32, err error)
@@ -154,9 +154,9 @@ type InterfaceVppAPI interface {
 	DeleteVxLanGpeTunnel(ifName string, vxLan *interfaces.VxlanLink) error
 
 	// AddIPSecTunnelInterface adds a new IPSec tunnel interface
-	AddIPSecTunnelInterface(ifName string, ipSecLink *interfaces.IPSecLink) (uint32, error)
+	AddIPSecTunnelInterface(ctx context.Context, ifName string, ipSecLink *interfaces.IPSecLink) (uint32, error)
 	// DeleteIPSecTunnelInterface removes existing IPSec tunnel interface
-	DeleteIPSecTunnelInterface(ifName string, ipSecLink *interfaces.IPSecLink) error
+	DeleteIPSecTunnelInterface(ctx context.Context, ifName string, ipSecLink *interfaces.IPSecLink) error
 
 	// AddBondInterface configures bond interface.
 	AddBondInterface(ifName string, mac string, bondLink *interfaces.BondLink) (uint32, error)
@@ -194,9 +194,9 @@ type InterfaceVppAPI interface {
 	SetVLanTagRewrite(ifIdx uint32, subIf *interfaces.SubInterface) error
 
 	// InterfaceAdminDown calls binary API SwInterfaceSetFlagsReply with AdminUpDown=0.
-	InterfaceAdminDown(ifIdx uint32) error
+	InterfaceAdminDown(ctx context.Context, ifIdx uint32) error
 	// InterfaceAdminUp calls binary API SwInterfaceSetFlagsReply with AdminUpDown=1.
-	InterfaceAdminUp(ifIdx uint32) error
+	InterfaceAdminUp(ctx context.Context, ifIdx uint32) error
 	// SetInterfaceTag registers new interface index/tag pair
 	SetInterfaceTag(tag string, ifIdx uint32) error
 	// RemoveInterfaceTag un-registers new interface index/tag pair
@@ -214,9 +214,9 @@ type InterfaceVppAPI interface {
 	// DelInterfaceIP calls SwInterfaceAddDelAddress bin API with IsAdd=00.
 	DelInterfaceIP(ifIdx uint32, addr *net.IPNet) error
 	// SetUnnumberedIP sets interface as un-numbered, linking IP address of the another interface (ifIdxWithIP)
-	SetUnnumberedIP(uIfIdx uint32, ifIdxWithIP uint32) error
+	SetUnnumberedIP(ctx context.Context, uIfIdx uint32, ifIdxWithIP uint32) error
 	// UnsetUnnumberedIP unset provided interface as un-numbered. IP address of the linked interface is removed
-	UnsetUnnumberedIP(uIfIdx uint32) error
+	UnsetUnnumberedIP(ctx context.Context, uIfIdx uint32) error
 	// SetInterfaceMac calls SwInterfaceSetMacAddress bin API.
 	SetInterfaceMac(ifIdx uint32, macAddress string) error
 	// SetInterfaceMtu calls HwInterfaceSetMtu bin API with desired MTU value.

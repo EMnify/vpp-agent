@@ -22,21 +22,26 @@ import (
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
 
-	corevppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
-	vpe_vpp2001 "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp2001"
-	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001"
-	vpp_dhcp "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/dhcp"
-	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ip"
-	vpp_vpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
+	corevppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
+	vpe_vpp2001 "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp2001"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
+	vpp_dhcp "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
+	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	vpp_ip_neighbor "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_neighbor"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l3xc"
+	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 )
 
 func init() {
 	var msgs []govppapi.Message
 	msgs = append(msgs, vpp_ip.AllMessages()...)
+	msgs = append(msgs, vpp_ip_neighbor.AllMessages()...)
 	msgs = append(msgs, vpp_vpe.AllMessages()...)
 	msgs = append(msgs, vpp_dhcp.AllMessages()...)
 
@@ -50,15 +55,21 @@ type L3VppHandler struct {
 	*IPNeighHandler
 	*VrfTableHandler
 	*DHCPProxyHandler
+	*L3XCHandler
 }
 
 func NewL3VppHandler(
-	ch govppapi.Channel,
+	c vpp.Client,
 	ifIdx ifaceidx.IfaceMetadataIndex,
 	vrfIdx vrfidx.VRFMetadataIndex,
 	addrAlloc netalloc.AddressAllocator,
 	log logging.Logger,
 ) vppcalls.L3VppAPI {
+	ch, err := c.NewAPIChannel()
+	if err != nil {
+		logging.Warnf("creating channel failed: %v", err)
+		return nil
+	}
 	return &L3VppHandler{
 		ArpVppHandler:      NewArpVppHandler(ch, ifIdx, log),
 		ProxyArpVppHandler: NewProxyArpVppHandler(ch, ifIdx, log),
@@ -66,6 +77,7 @@ func NewL3VppHandler(
 		IPNeighHandler:     NewIPNeighVppHandler(ch, log),
 		VrfTableHandler:    NewVrfTableVppHandler(ch, log),
 		DHCPProxyHandler:   NewDHCPProxyHandler(ch, log),
+		L3XCHandler:        NewL3XCHandler(c, ifIdx, log),
 	}
 }
 
@@ -173,7 +185,7 @@ func NewVrfTableVppHandler(callsChan govppapi.Channel, log logging.Logger) *VrfT
 	}
 }
 
-// NewVrfTableVppHandler creates new instance of vrf-table vppcalls handler
+// NewDHCPProxyHandler creates new instance of vrf-table vppcalls handler
 func NewDHCPProxyHandler(callsChan govppapi.Channel, log logging.Logger) *DHCPProxyHandler {
 	if log == nil {
 		log = logrus.NewLogger("dhcp-proxy-handler")
@@ -184,18 +196,44 @@ func NewDHCPProxyHandler(callsChan govppapi.Channel, log logging.Logger) *DHCPPr
 	}
 }
 
+type L3XCHandler struct {
+	l3xc      l3xc.RPCService
+	ifIndexes ifaceidx.IfaceMetadataIndex
+	log       logging.Logger
+}
+
+// NewL3XCHandler creates new instance of L3XC vppcalls handler
+func NewL3XCHandler(c vpp.Client, ifIndexes ifaceidx.IfaceMetadataIndex, log logging.Logger) *L3XCHandler {
+	if log == nil {
+		log = logrus.NewLogger("l3xc-handler")
+	}
+	h := &L3XCHandler{
+		ifIndexes: ifIndexes,
+		log:       log,
+	}
+	if c.IsPluginLoaded(l3xc.ModuleName) {
+		ch, err := c.NewAPIChannel()
+		if err != nil {
+			logging.Warnf("creating channel failed: %v", err)
+			return nil
+		}
+		h.l3xc = l3xc.NewServiceClient(ch)
+	}
+	return h
+}
+
 func ipToAddress(ipstr string) (addr vpp_ip.Address, err error) {
 	netIP := net.ParseIP(ipstr)
 	if netIP == nil {
 		return vpp_ip.Address{}, fmt.Errorf("invalid IP: %q", ipstr)
 	}
 	if ip4 := netIP.To4(); ip4 == nil {
-		addr.Af = vpp_ip.ADDRESS_IP6
+		addr.Af = ip_types.ADDRESS_IP6
 		var ip6addr vpp_ip.IP6Address
 		copy(ip6addr[:], netIP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
-		addr.Af = vpp_ip.ADDRESS_IP4
+		addr.Af = ip_types.ADDRESS_IP4
 		var ip4addr vpp_ip.IP4Address
 		copy(ip4addr[:], ip4)
 		addr.Un.SetIP4(ip4addr)
@@ -206,12 +244,12 @@ func ipToAddress(ipstr string) (addr vpp_ip.Address, err error) {
 func networkToPrefix(dstNetwork *net.IPNet) vpp_ip.Prefix {
 	var addr vpp_ip.Address
 	if dstNetwork.IP.To4() == nil {
-		addr.Af = vpp_ip.ADDRESS_IP6
+		addr.Af = ip_types.ADDRESS_IP6
 		var ip6addr vpp_ip.IP6Address
 		copy(ip6addr[:], dstNetwork.IP.To16())
 		addr.Un.SetIP6(ip6addr)
 	} else {
-		addr.Af = vpp_ip.ADDRESS_IP4
+		addr.Af = ip_types.ADDRESS_IP4
 		var ip4addr vpp_ip.IP4Address
 		copy(ip4addr[:], dstNetwork.IP.To4())
 		addr.Un.SetIP4(ip4addr)
@@ -228,11 +266,4 @@ func uintToBool(value uint8) bool {
 		return false
 	}
 	return true
-}
-
-func boolToUint(input bool) uint8 {
-	if input {
-		return 1
-	}
-	return 0
 }

@@ -18,23 +18,23 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/af_packet"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/bond"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/dhcp"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/gre"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/gtpu"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/interfaces"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ip"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ipsec"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/l2"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/memif"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/span"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/tapv2"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vmxnet3"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vxlan"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/af_packet"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/bond"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/dhcp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/gre"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/gtpu"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ipsec"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l2"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/memif"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/span"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/tapv2"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vmxnet3"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vxlan"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 )
 
 var HandlerVersion = vpp.HandlerVersion{
@@ -77,6 +77,7 @@ func init() {
 type InterfaceVppHandler struct {
 	callsChannel govppapi.Channel
 	interfaces   interfaces.RPCService
+	ipsec        ipsec.RPCService
 	gtpu         gtpu.RPCService
 	memif        memif.RPCService
 	vmxnet3      vmxnet3.RPCService
@@ -92,6 +93,7 @@ func NewInterfaceVppHandler(c vpp.Client, log logging.Logger) vppcalls.Interface
 	h := &InterfaceVppHandler{
 		callsChannel: ch,
 		interfaces:   interfaces.NewServiceClient(ch),
+		ipsec:        ipsec.NewServiceClient(ch),
 		log:          log,
 	}
 	if c.IsPluginLoaded(gtpu.ModuleName) {

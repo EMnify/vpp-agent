@@ -20,13 +20,14 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	. "github.com/onsi/gomega"
 
-	"go.ligato.io/vpp-agent/v2/pkg/idxvpp"
-	vpp_l2 "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/l2"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l2plugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
-	l2 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l2"
+	"go.ligato.io/vpp-agent/v3/pkg/idxvpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip_types"
+	vpp_l2 "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/l2"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l2plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
 var testDataInMessagesBDs = []govppapi.Message{
@@ -146,8 +147,8 @@ func TestDumpBridgeDomainsWithARP(t *testing.T) {
 				Entry: vpp_l2.BdIPMac{
 					BdID: 5,
 					IP: vpp_l2.Address{
-						Af: vpp_l2.ADDRESS_IP4,
-						Un: vpp_l2.AddressUnionIP4(
+						Af: ip_types.ADDRESS_IP4,
+						Un: ip_types.AddressUnionIP4(
 							vpp_l2.IP4Address{192, 168, 0, 1},
 						),
 					},

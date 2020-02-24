@@ -15,23 +15,30 @@
 package vpp1904
 
 import (
+	"context"
 	"fmt"
 	"net"
 
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/ligato/cn-infra/logging/logrus"
+	"github.com/pkg/errors"
 
-	vpevppcalls "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls"
-	vpe_vpp1904 "go.ligato.io/vpp-agent/v2/plugins/govppmux/vppcalls/vpp1904"
-	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/dhcp"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/ip"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1904/vpe"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
+	vpevppcalls "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
+	vpe_vpp1904 "go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls/vpp1904"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/dhcp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1904/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
+)
+
+var (
+	ErrUnsupported = errors.New("unsupported")
 )
 
 func init() {
@@ -50,22 +57,29 @@ type L3VppHandler struct {
 	*IPNeighHandler
 	*VrfTableHandler
 	*DHCPProxyHandler
+	*L3XCHandlerUnsupported
 }
 
 func NewL3VppHandler(
-	ch govppapi.Channel,
+	c vpp.Client,
 	ifIdx ifaceidx.IfaceMetadataIndex,
 	vrfIdx vrfidx.VRFMetadataIndex,
 	addrAlloc netalloc.AddressAllocator,
 	log logging.Logger,
 ) vppcalls.L3VppAPI {
+	ch, err := c.NewAPIChannel()
+	if err != nil {
+		logging.Warnf("creating channel failed: %v", err)
+		return nil
+	}
 	return &L3VppHandler{
-		ArpVppHandler:      NewArpVppHandler(ch, ifIdx, log),
-		ProxyArpVppHandler: NewProxyArpVppHandler(ch, ifIdx, log),
-		RouteHandler:       NewRouteVppHandler(ch, ifIdx, addrAlloc, log),
-		IPNeighHandler:     NewIPNeighVppHandler(ch, log),
-		VrfTableHandler:    NewVrfTableVppHandler(ch, log),
-		DHCPProxyHandler:   NewDHCPProxyHandler(ch, log),
+		ArpVppHandler:          NewArpVppHandler(ch, ifIdx, log),
+		ProxyArpVppHandler:     NewProxyArpVppHandler(ch, ifIdx, log),
+		RouteHandler:           NewRouteVppHandler(ch, ifIdx, addrAlloc, log),
+		IPNeighHandler:         NewIPNeighVppHandler(ch, log),
+		VrfTableHandler:        NewVrfTableVppHandler(ch, log),
+		DHCPProxyHandler:       NewDHCPProxyHandler(ch, log),
+		L3XCHandlerUnsupported: &L3XCHandlerUnsupported{},
 	}
 }
 
@@ -180,6 +194,24 @@ func NewDHCPProxyHandler(callsChan govppapi.Channel, log logging.Logger) *DHCPPr
 		callsChannel: callsChan,
 		log:          log,
 	}
+}
+
+type L3XCHandlerUnsupported struct{}
+
+func (l L3XCHandlerUnsupported) DumpAllL3XC(ctx context.Context) ([]vppcalls.L3XC, error) {
+	return nil, ErrUnsupported
+}
+
+func (l L3XCHandlerUnsupported) DumpL3XC(ctx context.Context, index uint32) ([]vppcalls.L3XC, error) {
+	return nil, ErrUnsupported
+}
+
+func (l L3XCHandlerUnsupported) UpdateL3XC(ctx context.Context, l3xc *vppcalls.L3XC) error {
+	return ErrUnsupported
+}
+
+func (l L3XCHandlerUnsupported) DeleteL3XC(ctx context.Context, index uint32, ipv6 bool) error {
+	return ErrUnsupported
 }
 
 func ipToAddress(ipstr string) (addr ip.Address, err error) {
