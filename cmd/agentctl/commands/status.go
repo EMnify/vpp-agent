@@ -19,7 +19,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	agentcli "go.ligato.io/vpp-agent/v2/cmd/agentctl/cli"
+	agentcli "go.ligato.io/vpp-agent/v3/cmd/agentctl/cli"
 )
 
 func NewStatusCommand(cli agentcli.Cli) *cobra.Command {
@@ -29,7 +29,7 @@ func NewStatusCommand(cli agentcli.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "status",
 		Short: "Retrieve agent status",
-		Args:  cobra.RangeArgs(0, 1),
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runStatus(cli, opts)
 		},

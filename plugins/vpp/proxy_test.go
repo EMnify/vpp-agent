@@ -26,9 +26,9 @@ import (
 	"git.fd.io/govpp.git/api"
 	"git.fd.io/govpp.git/proxy"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/interfaces"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/interfaces"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/vpe"
 )
 
 func init() {
@@ -86,6 +86,7 @@ func TestProxyClient(t *testing.T) {
 
 	// - or using generated rpc service
 	svc := interfaces.NewServiceClient(binapiChannel)
+
 	stream, err := svc.DumpSwInterface(context.Background(), &interfaces.SwInterfaceDump{})
 	if err != nil {
 		log.Fatalln("binapi request failed:", err)

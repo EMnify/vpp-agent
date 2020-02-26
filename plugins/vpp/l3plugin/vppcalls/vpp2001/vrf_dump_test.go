@@ -19,10 +19,10 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
-	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ip"
-	vpp_vpe "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/vpe"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	vpp_vpe "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/vpe"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 func TestDumpVrfTables(t *testing.T) {
@@ -34,22 +34,22 @@ func TestDumpVrfTables(t *testing.T) {
 		&vpp_ip.IPTableDetails{
 			Table: vpp_ip.IPTable{
 				TableID: 1,
-				Name:    []byte("table3"),
-				IsIP6:   0,
+				Name:    "table3",
+				IsIP6:   false,
 			},
 		},
 		&vpp_ip.IPTableDetails{
 			Table: vpp_ip.IPTable{
 				TableID: 2,
-				Name:    []byte("table3"),
-				IsIP6:   0,
+				Name:    "table3",
+				IsIP6:   false,
 			},
 		},
 		&vpp_ip.IPTableDetails{
 			Table: vpp_ip.IPTable{
 				TableID: 3,
-				Name:    []byte("table2"),
-				IsIP6:   1,
+				Name:    "table2",
+				IsIP6:   true,
 			},
 		},
 	)

@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 )
 
 func TestIsFeatureSupported(t *testing.T) {

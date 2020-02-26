@@ -1,3 +1,17 @@
+//  Copyright (c) 2020 Cisco and/or its affiliates.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at:
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
 package cli
 
 import (
@@ -10,7 +24,7 @@ import (
 
 	"github.com/ligato/cn-infra/logging"
 
-	"go.ligato.io/vpp-agent/v2/cmd/agentctl/client"
+	"go.ligato.io/vpp-agent/v3/cmd/agentctl/client"
 )
 
 const (
@@ -33,34 +47,34 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 	// TODO: consider using viper.AutomaticEnv with some prefix like `AGENTCTL`
 
 	flags.StringP("host", "H", client.DefaultAgentHost, "Address on which agent is reachable, default from AGENT_HOST env var")
-	viper.BindPFlag("host", flags.Lookup("host"))
-	viper.BindEnv("host", "AGENT_HOST")
+	_ = viper.BindPFlag("host", flags.Lookup("host"))
+	_ = viper.BindEnv("host", "AGENT_HOST")
 
 	flags.String("service-label", "", "Service label for specific agent instance, default from MICROSERVICE_LABEL env var")
-	viper.BindPFlag("service-label", flags.Lookup("service-label"))
-	viper.BindEnv("service-label", "MICROSERVICE_LABEL")
+	_ = viper.BindPFlag("service-label", flags.Lookup("service-label"))
+	_ = viper.BindEnv("service-label", "MICROSERVICE_LABEL")
 
 	flags.Int("http-port", client.DefaultPortHTTP, "HTTP server port")
-	viper.BindPFlag("http-port", flags.Lookup("http-port"))
+	_ = viper.BindPFlag("http-port", flags.Lookup("http-port"))
 
 	flags.Int("grpc-port", client.DefaultPortGRPC, "gRPC server port")
-	viper.BindPFlag("grpc-port", flags.Lookup("grpc-port"))
+	_ = viper.BindPFlag("grpc-port", flags.Lookup("grpc-port"))
 
 	flags.StringSliceP("etcd-endpoints", "e", []string{defaultEtcdEndpoint}, "Etcd endpoints to connect to, default from ETCD_ENDPOINTS env var")
-	viper.BindPFlag("etcd-endpoints", flags.Lookup("etcd-endpoints"))
-	viper.BindEnv("etcd-endpoints", "ETCD_ENDPOINTS")
+	_ = viper.BindPFlag("etcd-endpoints", flags.Lookup("etcd-endpoints"))
+	_ = viper.BindEnv("etcd-endpoints", "ETCD_ENDPOINTS")
 
 	flags.String("http-basic-auth", "", "Basic auth for HTTP connection in form \"user:pass\"")
-	viper.BindPFlag("http-basic-auth", flags.Lookup("http-basic-auth"))
-	viper.BindEnv("http-basic-auth", "AGENTCTL_HTTP_BASIC_AUTH")
+	_ = viper.BindPFlag("http-basic-auth", flags.Lookup("http-basic-auth"))
+	_ = viper.BindEnv("http-basic-auth", "AGENTCTL_HTTP_BASIC_AUTH")
 
 	flags.Bool("insecure-tls", false, "Use TLS without server's certificate validation")
-	viper.BindPFlag("insecure-tls", flags.Lookup("insecure-tls"))
+	_ = viper.BindPFlag("insecure-tls", flags.Lookup("insecure-tls"))
 
 	flags.String("config-dir", "", "Path to directory with config file.")
-	viper.BindPFlag("config-dir", flags.Lookup("config-dir"))
+	_ = viper.BindPFlag("config-dir", flags.Lookup("config-dir"))
 
-	viper.BindEnv("ligato-api-version", "LIGATO_API_VERSION")
+	_ = viper.BindEnv("ligato-api-version", "LIGATO_API_VERSION")
 }
 
 // SetLogLevel sets the logrus logging level (WarnLevel for empty string).

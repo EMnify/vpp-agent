@@ -15,15 +15,17 @@
 package descriptor
 
 import (
+	"context"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
 
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/descriptor/adapter"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
-	interfaces "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/interfaces"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/descriptor/adapter"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
+	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
 const (
@@ -91,7 +93,7 @@ func (d *UnnumberedIfDescriptor) Create(key string, unIntf *interfaces.Interface
 		return nil, err
 	}
 
-	err = d.ifHandler.SetUnnumberedIP(ifMeta.SwIfIndex, ifWithIPMeta.SwIfIndex)
+	err = d.ifHandler.SetUnnumberedIP(context.TODO(), ifMeta.SwIfIndex, ifWithIPMeta.SwIfIndex)
 	if err != nil {
 		d.log.Error(err)
 	}
@@ -109,7 +111,7 @@ func (d *UnnumberedIfDescriptor) Delete(key string, unIntf *interfaces.Interface
 		return err
 	}
 
-	err := d.ifHandler.UnsetUnnumberedIP(ifMeta.SwIfIndex)
+	err := d.ifHandler.UnsetUnnumberedIP(context.TODO(), ifMeta.SwIfIndex)
 	if err != nil {
 		d.log.Error(err)
 	}

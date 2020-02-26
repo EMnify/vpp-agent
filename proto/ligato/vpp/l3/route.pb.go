@@ -23,9 +23,17 @@ const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 type Route_RouteType int32
 
 const (
+	// Forwarding is being done in the specified vrf_id only, or according to
+	// the specified outgoing interface.
 	Route_INTRA_VRF Route_RouteType = 0
+	// Forwarding is being done by lookup into a different VRF,
+	// specified as via_vrf_id field. In case of these routes, the outgoing
+	// interface should not be specified. The next hop IP address
+	// does not have to be specified either, in that case VPP does full
+	// recursive lookup in the via_vrf_id VRF.
 	Route_INTER_VRF Route_RouteType = 1
-	Route_DROP      Route_RouteType = 2
+	// Drops the network communication designated for specific IP address.
+	Route_DROP Route_RouteType = 2
 )
 
 var Route_RouteType_name = map[int32]string{
@@ -49,14 +57,24 @@ func (Route_RouteType) EnumDescriptor() ([]byte, []int) {
 }
 
 type Route struct {
-	Type              Route_RouteType `protobuf:"varint,10,opt,name=type,proto3,enum=ligato.vpp.l3.Route_RouteType" json:"type,omitempty"`
-	VrfId             uint32          `protobuf:"varint,1,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
-	DstNetwork        string          `protobuf:"bytes,3,opt,name=dst_network,json=dstNetwork,proto3" json:"dst_network,omitempty"`
-	NextHopAddr       string          `protobuf:"bytes,4,opt,name=next_hop_addr,json=nextHopAddr,proto3" json:"next_hop_addr,omitempty"`
-	OutgoingInterface string          `protobuf:"bytes,5,opt,name=outgoing_interface,json=outgoingInterface,proto3" json:"outgoing_interface,omitempty"`
-	Weight            uint32          `protobuf:"varint,6,opt,name=weight,proto3" json:"weight,omitempty"`
-	Preference        uint32          `protobuf:"varint,7,opt,name=preference,proto3" json:"preference,omitempty"`
-	// (a poor man's primary and backup)
+	Type Route_RouteType `protobuf:"varint,10,opt,name=type,proto3,enum=ligato.vpp.l3.Route_RouteType" json:"type,omitempty"`
+	// VRF identifier, field required for remote client. This value should be
+	// consistent with VRF ID in static route key. If it is not, value from
+	// key will be preffered and this field will be overriden.
+	// Non-zero VRF has to be explicitly created (see api/models/vpp/l3/vrf.proto)
+	VrfId uint32 `protobuf:"varint,1,opt,name=vrf_id,json=vrfId,proto3" json:"vrf_id,omitempty"`
+	// Destination network defined by IP address and prefix (format: <address>/<prefix>).
+	DstNetwork string `protobuf:"bytes,3,opt,name=dst_network,json=dstNetwork,proto3" json:"dst_network,omitempty"`
+	// Next hop address.
+	NextHopAddr string `protobuf:"bytes,4,opt,name=next_hop_addr,json=nextHopAddr,proto3" json:"next_hop_addr,omitempty"`
+	// Interface name of the outgoing interface.
+	OutgoingInterface string `protobuf:"bytes,5,opt,name=outgoing_interface,json=outgoingInterface,proto3" json:"outgoing_interface,omitempty"`
+	// Weight is used for unequal cost load balancing.
+	Weight uint32 `protobuf:"varint,6,opt,name=weight,proto3" json:"weight,omitempty"`
+	// Preference defines path preference. Lower preference is preferred.
+	// Only paths with the best preference contribute to forwarding (a poor man's primary and backup).
+	Preference uint32 `protobuf:"varint,7,opt,name=preference,proto3" json:"preference,omitempty"`
+	// Specifies VRF ID for the next hop lookup / recursive lookup
 	ViaVrfId             uint32   `protobuf:"varint,8,opt,name=via_vrf_id,json=viaVrfId,proto3" json:"via_vrf_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -152,7 +170,7 @@ func init() {
 func init() { proto.RegisterFile("ligato/vpp/l3/route.proto", fileDescriptor_40b3e1f32796b68b) }
 
 var fileDescriptor_40b3e1f32796b68b = []byte{
-	// 326 bytes of a gzipped FileDescriptorProto
+	// 325 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x91, 0x41, 0x6b, 0x2a, 0x31,
 	0x14, 0x85, 0xdf, 0xf8, 0x74, 0x9e, 0x5e, 0x99, 0x87, 0x0d, 0xb4, 0xa4, 0x50, 0xac, 0xb8, 0x72,
 	0xe3, 0x0c, 0x38, 0xa5, 0x9b, 0xae, 0x2c, 0x6d, 0xa9, 0x1b, 0x5b, 0x82, 0xb8, 0xe8, 0x26, 0x4c,
@@ -171,7 +189,7 @@ var fileDescriptor_40b3e1f32796b68b = []byte{
 	0x3f, 0xd4, 0x68, 0x7a, 0xde, 0x74, 0x32, 0x9b, 0xef, 0x9a, 0xf4, 0x53, 0x68, 0xfd, 0x74, 0x26,
 	0x11, 0xb4, 0x26, 0xd3, 0x19, 0x1b, 0xf3, 0x39, 0x7b, 0xea, 0xfc, 0x39, 0xc8, 0x47, 0xe6, 0x65,
 	0x40, 0x9a, 0x50, 0x7f, 0x60, 0x2f, 0xaf, 0x9d, 0xda, 0xfd, 0xed, 0xdb, 0x4d, 0xa1, 0x8e, 0xf7,
-	0x93, 0x7e, 0x85, 0x61, 0x56, 0x60, 0x65, 0x13, 0x37, 0x4a, 0xfc, 0x0a, 0xc9, 0xc9, 0x3e, 0x77,
-	0x4e, 0x6b, 0x5e, 0xa6, 0xef, 0xa1, 0x67, 0xe9, 0x77, 0x00, 0x00, 0x00, 0xff, 0xff, 0xd2, 0x54,
-	0xc2, 0x0b, 0xbe, 0x01, 0x00, 0x00,
+	0x93, 0x7e, 0x85, 0x61, 0x56, 0x60, 0x65, 0x13, 0x97, 0x26, 0x7e, 0x85, 0xe4, 0x64, 0x9f, 0x3b,
+	0xa7, 0x35, 0x2f, 0xd3, 0xf7, 0xd0, 0xb3, 0xf4, 0x3b, 0x00, 0x00, 0xff, 0xff, 0x47, 0x80, 0xb2,
+	0x9e, 0xbe, 0x01, 0x00, 0x00,
 }

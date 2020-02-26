@@ -19,11 +19,11 @@ import (
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp1908/ip"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp1908"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp1908/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls/vpp1908"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 var vrfTables = []*l3.VrfTable{
@@ -128,6 +128,33 @@ func TestDeleteVrfTable(t *testing.T) {
 	ctx.MockVpp.MockReply(&ip.IPTableAddDelReply{Retval: 1})
 	err = vtHandler.DelVrfTable(vrfTables[0])
 	Expect(err).To(Not(BeNil()))
+}
+
+// Test VRF flow hash settings
+func TestVrfFlowHashSettings(t *testing.T) {
+	ctx, vtHandler := vrfTableTestSetup(t)
+	defer ctx.TeardownTestCtx()
+
+	ctx.MockVpp.MockReply(&ip.SetIPFlowHashReply{})
+	err := vtHandler.SetVrfFlowHashSettings(5, true,
+		&l3.VrfTable_FlowHashSettings{
+			UseSrcIp:   true,
+			UseSrcPort: true,
+			Symmetric:  true,
+		})
+	Expect(err).To(Succeed())
+
+	vppMsg, ok := ctx.MockChannel.Msg.(*ip.SetIPFlowHash)
+	Expect(ok).To(BeTrue())
+	Expect(vppMsg.VrfID).To(BeEquivalentTo(5))
+	Expect(vppMsg.IsIPv6).To(BeEquivalentTo(1))
+	Expect(vppMsg.Src).To(BeEquivalentTo(1))
+	Expect(vppMsg.Dst).To(BeEquivalentTo(0))
+	Expect(vppMsg.Sport).To(BeEquivalentTo(1))
+	Expect(vppMsg.Dport).To(BeEquivalentTo(0))
+	Expect(vppMsg.Proto).To(BeEquivalentTo(0))
+	Expect(vppMsg.Symmetric).To(BeEquivalentTo(1))
+	Expect(vppMsg.Reverse).To(BeEquivalentTo(0))
 }
 
 func vrfTableTestSetup(t *testing.T) (*vppmock.TestCtx, vppcalls.VrfTableVppAPI) {

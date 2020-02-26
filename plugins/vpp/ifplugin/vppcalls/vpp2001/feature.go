@@ -14,7 +14,7 @@
 
 package vpp2001
 
-import "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
+import "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 
 // IsFeatureSupported indicates whether or not a particular API feature is supported.
 func (h *InterfaceVppHandler) IsFeatureSupported(f vppcalls.Feature) bool {

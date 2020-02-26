@@ -15,14 +15,23 @@
 package vppcalls
 
 import (
+	"context"
+	"errors"
+	"net"
+
 	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/logging"
-	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
+)
+
+var (
+	// ErrIPNeighborNotImplemented is used for IPScanNeighAPI handlers that are missing implementation.
+	ErrIPNeighborNotImplemented = errors.New("ip neighbor config not implemented")
 )
 
 // L3VppAPI groups L3 Vpp APIs.
@@ -33,6 +42,7 @@ type L3VppAPI interface {
 	IPNeighVppAPI
 	VrfTableVppAPI
 	DHCPProxyAPI
+	L3XCVppAPI
 }
 
 // ArpDetails holds info about ARP entry as a proto model
@@ -46,7 +56,7 @@ type ArpMeta struct {
 	SwIfIndex uint32
 }
 
-// ArpVppAPI provides methods for managing ARP entries
+// DHCPProxyAPI provides methods for managing ARP entries
 type DHCPProxyAPI interface {
 	DHCPProxyRead
 
@@ -117,7 +127,7 @@ type ProxyArpVppAPI interface {
 type ProxyArpVppRead interface {
 	// DumpProxyArpRanges returns configured proxy ARP ranges
 	DumpProxyArpRanges() ([]*ProxyArpRangesDetails, error)
-	// DumpProxyArpRanges returns configured proxy ARP interfaces
+	// DumpProxyArpInterfaces returns configured proxy ARP interfaces
 	DumpProxyArpInterfaces() ([]*ProxyArpInterfaceDetails, error)
 }
 
@@ -161,10 +171,10 @@ type RouteVppAPI interface {
 
 	// VppAddRoute adds new route, according to provided input.
 	// Every route has to contain VRF ID (default is 0).
-	VppAddRoute(route *l3.Route) error
+	VppAddRoute(ctx context.Context, route *l3.Route) error
 	// VppDelRoute removes old route, according to provided input.
 	// Every route has to contain VRF ID (default is 0).
-	VppDelRoute(route *l3.Route) error
+	VppDelRoute(ctx context.Context, route *l3.Route) error
 }
 
 // RouteVppRead provides read methods for routes
@@ -182,6 +192,8 @@ type VrfTableVppAPI interface {
 	AddVrfTable(table *l3.VrfTable) error
 	// DelVrfTable deletes existing VRF table.
 	DelVrfTable(table *l3.VrfTable) error
+	// SetVrfFlowHashSettings sets IP flow hash settings for a VRF table.
+	SetVrfFlowHashSettings(vrfID uint32, isIPv6 bool, hashFields *l3.VrfTable_FlowHashSettings) error
 }
 
 // VrfTableVppRead provides read methods for VRF tables.
@@ -196,6 +208,37 @@ type IPNeighVppAPI interface {
 	SetIPScanNeighbor(data *l3.IPScanNeighbor) error
 	// GetIPScanNeighbor returns IP scan neighbor configuration from the VPP
 	GetIPScanNeighbor() (*l3.IPScanNeighbor, error)
+	// DefaultIPScanNeighbor returns default IP scan neighbor configuration
+	DefaultIPScanNeighbor() *l3.IPScanNeighbor
+}
+
+// Path represents FIB path entry.
+type Path struct {
+	SwIfIndex  uint32
+	NextHop    net.IP
+	Weight     uint8
+	Preference uint8
+}
+
+// L3XC represents configuration for L3XC.
+type L3XC struct {
+	SwIfIndex uint32
+	IsIPv6    bool
+	Paths     []Path
+}
+
+// L3XCVppRead provides read methods for L3XC configuration.
+type L3XCVppRead interface {
+	DumpAllL3XC(ctx context.Context) ([]L3XC, error)
+	DumpL3XC(ctx context.Context, index uint32) ([]L3XC, error)
+}
+
+// L3XCVppAPI provides methods for managing L3XC configuration.
+type L3XCVppAPI interface {
+	L3XCVppRead
+
+	UpdateL3XC(ctx context.Context, l3xc *L3XC) error
+	DeleteL3XC(ctx context.Context, index uint32, ipv6 bool) error
 }
 
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
@@ -203,7 +246,7 @@ var Handler = vpp.RegisterHandler(vpp.HandlerDesc{
 	HandlerAPI: (*L3VppAPI)(nil),
 })
 
-type NewHandlerFunc func(ch govppapi.Channel, idx ifaceidx.IfaceMetadataIndex, vrfIdx vrfidx.VRFMetadataIndex, addrAlloc netalloc.AddressAllocator, log logging.Logger) L3VppAPI
+type NewHandlerFunc func(c vpp.Client, idx ifaceidx.IfaceMetadataIndex, vrfIdx vrfidx.VRFMetadataIndex, addrAlloc netalloc.AddressAllocator, log logging.Logger) L3VppAPI
 
 func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandlerFunc) {
 	Handler.AddVersion(vpp.HandlerVersion{
@@ -216,15 +259,11 @@ func AddHandlerVersion(version vpp.Version, msgs []govppapi.Message, h NewHandle
 			return ch.CheckCompatiblity(msgs...)
 		},
 		NewHandler: func(c vpp.Client, a ...interface{}) vpp.HandlerAPI {
-			ch, err := c.NewAPIChannel()
-			if err != nil {
-				return err
-			}
 			var vrfIdx vrfidx.VRFMetadataIndex
 			if a[1] != nil {
 				vrfIdx = a[1].(vrfidx.VRFMetadataIndex)
 			}
-			return h(ch, a[0].(ifaceidx.IfaceMetadataIndex), vrfIdx, a[2].(netalloc.AddressAllocator), a[3].(logging.Logger))
+			return h(c, a[0].(ifaceidx.IfaceMetadataIndex), vrfIdx, a[2].(netalloc.AddressAllocator), a[3].(logging.Logger))
 		},
 	})
 }

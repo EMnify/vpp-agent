@@ -12,56 +12,51 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate descriptor-adapter --descriptor-name Route --value-type *vpp_l3.Route --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name ARPEntry --value-type *vpp_l3.ARPEntry --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name ProxyARP --value-type *vpp_l3.ProxyARP --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name ProxyARPInterface --value-type *vpp_l3.ProxyARP_Interface --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name IPScanNeighbor --value-type *vpp_l3.IPScanNeighbor --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name VrfTable --value-type *vpp_l3.VrfTable --meta-type *vrfidx.VRFMetadata --import "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx" --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
-//go:generate descriptor-adapter --descriptor-name DHCPProxy --value-type *vpp_l3.DHCPProxy --import "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name Route --value-type *vpp_l3.Route --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ARPEntry --value-type *vpp_l3.ARPEntry --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ProxyARP --value-type *vpp_l3.ProxyARP --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name ProxyARPInterface --value-type *vpp_l3.ProxyARP_Interface --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name IPScanNeighbor --value-type *vpp_l3.IPScanNeighbor --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name VrfTable --value-type *vpp_l3.VrfTable --meta-type *vrfidx.VRFMetadata --import "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx" --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name DHCPProxy --value-type *vpp_l3.DHCPProxy --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
+//go:generate descriptor-adapter --descriptor-name L3XC --value-type *vpp_l3.L3XConnect --import "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3" --output-dir "descriptor"
 
 package l3plugin
 
 import (
-	govppapi "git.fd.io/govpp.git/api"
 	"github.com/ligato/cn-infra/health/statuscheck"
 	"github.com/ligato/cn-infra/infra"
 	"github.com/pkg/errors"
 
-	"go.ligato.io/vpp-agent/v2/plugins/govppmux"
-	kvs "go.ligato.io/vpp-agent/v2/plugins/kvscheduler/api"
-	"go.ligato.io/vpp-agent/v2/plugins/netalloc"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/descriptor"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
+	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
+	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
+	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
+	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/descriptor"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp1904"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp1908"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp2001"
-	_ "go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp2001_324"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls/vpp1904"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls/vpp1908"
+	_ "go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls/vpp2001"
 )
+
+func init() {
+	kvscheduler.AddNonRetryableError(vppcalls.ErrIPNeighborNotImplemented)
+}
 
 // L3Plugin configures Linux routes and ARP entries using Netlink API.
 type L3Plugin struct {
 	Deps
-
-	// GoVPP channels
-	vppCh govppapi.Channel
 
 	// VPP handler
 	l3Handler vppcalls.L3VppAPI
 
 	// index maps
 	vrfIndex vrfidx.VRFMetadataIndex
-
-	// descriptors
-	proxyArpIfaceDescriptor  *descriptor.ProxyArpInterfaceDescriptor
-	ipScanNeighborDescriptor *descriptor.IPScanNeighborDescriptor
-	dhcpProxyDescriptor      *descriptor.DHCPProxyDescriptor
 }
 
-// Deps lists dependencies of the interface p.
 type Deps struct {
 	infra.PluginDeps
 	KVScheduler kvs.KVScheduler
@@ -72,14 +67,7 @@ type Deps struct {
 }
 
 // Init initializes and registers descriptors for Linux ARPs and Routes.
-func (p *L3Plugin) Init() error {
-	var err error
-
-	// GoVPP channels
-	if p.vppCh, err = p.VPP.NewAPIChannel(); err != nil {
-		return errors.Errorf("failed to create GoVPP API channel: %v", err)
-	}
-
+func (p *L3Plugin) Init() (err error) {
 	// init handlers
 	p.l3Handler = vppcalls.CompatibleL3VppHandler(p.VPP, p.IfPlugin.GetInterfaceIndex(),
 		p.vrfIndex, p.AddrAlloc, p.Log)
@@ -110,6 +98,7 @@ func (p *L3Plugin) Init() error {
 	proxyArpIfaceDescriptor := descriptor.NewProxyArpInterfaceDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 	ipScanNeighborDescriptor := descriptor.NewIPScanNeighborDescriptor(p.KVScheduler, p.l3Handler, p.Log)
 	dhcpProxyDescriptor := descriptor.NewDHCPProxyDescriptor(p.KVScheduler, p.l3Handler, p.Log)
+	l3xcDescriptor := descriptor.NewL3XCDescriptor(p.l3Handler, p.IfPlugin.GetInterfaceIndex(), p.Log)
 
 	err = p.Deps.KVScheduler.RegisterKVDescriptor(
 		routeDescriptor,
@@ -118,6 +107,7 @@ func (p *L3Plugin) Init() error {
 		proxyArpIfaceDescriptor,
 		ipScanNeighborDescriptor,
 		dhcpProxyDescriptor,
+		l3xcDescriptor,
 	)
 	if err != nil {
 		return err

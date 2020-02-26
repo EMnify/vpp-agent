@@ -17,19 +17,19 @@ package vpp2001_test
 import (
 	"testing"
 
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vrfidx"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vrfidx"
 
 	"github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
-	netallock_mock "go.ligato.io/vpp-agent/v2/plugins/netalloc/mock"
-	vpp_ip "go.ligato.io/vpp-agent/v2/plugins/vpp/binapi/vpp2001/ip"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/ifaceidx"
-	ifvppcalls "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls"
-	ifvpp2001_379 "go.ligato.io/vpp-agent/v2/plugins/vpp/ifplugin/vppcalls/vpp2001"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/l3plugin/vppcalls/vpp2001"
-	"go.ligato.io/vpp-agent/v2/plugins/vpp/vppmock"
-	l3 "go.ligato.io/vpp-agent/v2/proto/ligato/vpp/l3"
+	netallock_mock "go.ligato.io/vpp-agent/v3/plugins/netalloc/mock"
+	vpp_ip "go.ligato.io/vpp-agent/v3/plugins/vpp/binapi/vpp2001/ip"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/ifaceidx"
+	ifvppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
+	ifvpp2001_379 "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls/vpp2001"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/l3plugin/vppcalls/vpp2001"
+	"go.ligato.io/vpp-agent/v3/plugins/vpp/vppmock"
+	l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
 var routes = []*l3.Route{
@@ -58,11 +58,11 @@ func TestAddRoute(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vpp_ip.IPRouteAddDelReply{})
-	err := rtHandler.VppAddRoute(routes[0])
+	err := rtHandler.VppAddRoute(ctx.Context, routes[0])
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&vpp_ip.IPRouteAddDelReply{})
-	err = rtHandler.VppAddRoute(routes[2])
+	err = rtHandler.VppAddRoute(ctx.Context, routes[2])
 	Expect(err).To(Not(BeNil())) // unknown interface
 }
 
@@ -72,15 +72,15 @@ func TestDeleteRoute(t *testing.T) {
 	defer ctx.TeardownTestCtx()
 
 	ctx.MockVpp.MockReply(&vpp_ip.IPRouteAddDelReply{})
-	err := rtHandler.VppDelRoute(routes[0])
+	err := rtHandler.VppDelRoute(ctx.Context, routes[0])
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&vpp_ip.IPRouteAddDelReply{})
-	err = rtHandler.VppDelRoute(routes[1])
+	err = rtHandler.VppDelRoute(ctx.Context, routes[1])
 	Expect(err).To(Succeed())
 
 	ctx.MockVpp.MockReply(&vpp_ip.IPRouteAddDelReply{Retval: 1})
-	err = rtHandler.VppDelRoute(routes[0])
+	err = rtHandler.VppDelRoute(ctx.Context, routes[0])
 	Expect(err).To(Not(BeNil()))
 }
 
