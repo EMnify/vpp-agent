@@ -21,7 +21,7 @@ import (
 	"time"
 
 	govppapi "git.fd.io/govpp.git/api"
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
@@ -251,8 +251,10 @@ func (c *InterfaceStateUpdater) doUpdatesIfStateDetails() {
 
 	var ifIdxs []uint32
 	c.access.Lock()
-	for ifIdx := range c.ifsForUpdate {
-		ifIdxs = append(ifIdxs, ifIdx)
+	if len(c.ifsForUpdate) < 1000 {
+		for ifIdx := range c.ifsForUpdate {
+			ifIdxs = append(ifIdxs, ifIdx)
+		}
 	}
 	// clear interfaces for update
 	c.ifsForUpdate = make(map[uint32]struct{})
