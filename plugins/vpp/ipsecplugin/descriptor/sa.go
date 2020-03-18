@@ -15,10 +15,8 @@
 package descriptor
 
 import (
-	"strconv"
-
-	"github.com/ligato/cn-infra/logging"
 	"github.com/pkg/errors"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp/ipsecplugin/descriptor/adapter"
@@ -67,7 +65,6 @@ func (d *IPSecSADescriptor) GetDescriptor() *adapter.SADescriptor {
 		KeySelector:     ipsec.ModelSecurityAssociation.IsKeyValid,
 		KeyLabel:        ipsec.ModelSecurityAssociation.StripKeyPrefix,
 		ValueComparator: d.EquivalentIPSecSAs,
-		Validate:        d.Validate,
 		Create:          d.Create,
 		Delete:          d.Delete,
 		Retrieve:        d.Retrieve,
@@ -89,18 +86,6 @@ func (d *IPSecSADescriptor) EquivalentIPSecSAs(key string, oldSA, newSA *ipsec.S
 		oldSA.TunnelSrcAddr == newSA.TunnelSrcAddr &&
 		oldSA.TunnelDstAddr == newSA.TunnelDstAddr &&
 		oldSA.EnableUdpEncap == newSA.EnableUdpEncap
-}
-
-// Validate validates VPP security association configuration.
-func (d *IPSecSADescriptor) Validate(key string, sa *ipsec.SecurityAssociation) error {
-	if sa.Index == "" {
-		return kvs.NewInvalidValueError(ErrSAWithoutIndex, "index")
-	}
-	if _, err := strconv.Atoi(sa.Index); err != nil {
-		return kvs.NewInvalidValueError(ErrSAInvalidIndex, "index")
-	}
-
-	return nil
 }
 
 // Create adds a new security association pair.

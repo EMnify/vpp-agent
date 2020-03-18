@@ -69,7 +69,7 @@ const (
 
 type TestCtx struct {
 	t              *testing.T
-	Context        context.Context
+	Ctx            context.Context
 	vppCmd         *exec.Cmd
 	stderr, stdout *bytes.Buffer
 	Conn           *govppcore.Connection
@@ -225,7 +225,7 @@ func setupVPP(t *testing.T) *TestCtx {
 
 	return &TestCtx{
 		t:           t,
-		Context:     ctx,
+		Ctx:         ctx,
 		versionInfo: versionInfo,
 		vpp:         vpeHandler,
 		vppCmd:      vppCmd,
@@ -297,11 +297,11 @@ type vppClient struct {
 	version vpp.Version
 }
 
-func (m *vppClient) Version() vpp.Version {
-	return m.version
+func (v *vppClient) Version() vpp.Version {
+	return v.version
 }
 
-func (m *vppClient) BinapiVersion() vpp.Version {
+func (v *vppClient) BinapiVersion() vpp.Version {
 	return ""
 }
 
@@ -325,4 +325,8 @@ func (v *vppClient) IsPluginLoaded(plugin string) bool {
 		}
 	}
 	return false
+}
+
+func (v *vppClient) OnReconnect(h func()) {
+	// no-op
 }

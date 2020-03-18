@@ -15,19 +15,19 @@
 package app
 
 import (
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync"
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/cn-infra/datasync/msgsync"
-	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/db/keyval/consul"
-	"github.com/ligato/cn-infra/db/keyval/etcd"
-	"github.com/ligato/cn-infra/db/keyval/redis"
-	"github.com/ligato/cn-infra/health/probe"
-	"github.com/ligato/cn-infra/health/statuscheck"
-	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/logging/logmanager"
-	"github.com/ligato/cn-infra/messaging/kafka"
+	"go.ligato.io/cn-infra/v2/datasync"
+	"go.ligato.io/cn-infra/v2/datasync/kvdbsync"
+	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
+	"go.ligato.io/cn-infra/v2/datasync/msgsync"
+	"go.ligato.io/cn-infra/v2/datasync/resync"
+	"go.ligato.io/cn-infra/v2/db/keyval/consul"
+	"go.ligato.io/cn-infra/v2/db/keyval/etcd"
+	"go.ligato.io/cn-infra/v2/db/keyval/redis"
+	"go.ligato.io/cn-infra/v2/health/probe"
+	"go.ligato.io/cn-infra/v2/health/statuscheck"
+	"go.ligato.io/cn-infra/v2/infra"
+	"go.ligato.io/cn-infra/v2/logging/logmanager"
+	"go.ligato.io/cn-infra/v2/messaging/kafka"
 
 	"go.ligato.io/vpp-agent/v3/plugins/configurator"
 	linux_ifplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
@@ -106,6 +106,7 @@ func New() *VPPAgent {
 	}
 	orchestrator.DefaultPlugin.Watcher = watchers
 	orchestrator.DefaultPlugin.StatusPublisher = writers
+	orchestrator.EnabledGrpcMetrics()
 
 	ifplugin.DefaultPlugin.Watcher = watchers
 	ifplugin.DefaultPlugin.NotifyStates = ifStatePub
@@ -162,7 +163,7 @@ func (a *VPPAgent) AfterInit() error {
 }
 
 // Close could close used resources.
-func (VPPAgent) Close() error {
+func (a *VPPAgent) Close() error {
 	return nil
 }
 

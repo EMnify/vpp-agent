@@ -1,13 +1,4 @@
-# VPP Agent
-
-![GitHub contributors](https://img.shields.io/github/contributors/ligato/vpp-agent.svg)
-[![Build Status](https://travis-ci.org/ligato/vpp-agent.svg?branch=master)](https://travis-ci.org/ligato/vpp-agent)
-[![Coverage Status](https://coveralls.io/repos/github/ligato/vpp-agent/badge.svg?branch=master)](https://coveralls.io/github/ligato/vpp-agent?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ligato/vpp-agent)](https://goreportcard.com/report/github.com/ligato/vpp-agent)
-[![GoDoc](https://godoc.org/github.com/ligato/vpp-agent?status.svg)](https://godoc.org/github.com/ligato/vpp-agent)
-[![GitHub license](https://img.shields.io/badge/license-Apache%20license%202.0-blue.svg)](https://github.com/ligato/vpp-agent/blob/master/LICENSE)
-
-###### Please note that the content of this repository is currently **WORK IN PROGRESS**!
+<h1 align="center">VPP Agent</h1>
 
 The VPP Agent is a Go implementation of a control/management plane for [VPP][vpp] based
 cloud-native [Virtual Network Functions][vnf] (VNFs). The VPP Agent is built on top of 
@@ -16,6 +7,16 @@ cloud-native [Virtual Network Functions][vnf] (VNFs). The VPP Agent is built on 
 The VPP Agent can be used as-is as a management/control agent for VNFs  based on off-the-shelf
 VPP (e.g. a VPP-based vswitch), or as a framework for developing management agents for VPP-based
 CNFs. An example of a custom VPP-based CNF is the [Contiv-VPP][contiv-vpp] vswitch.
+
+> Please note that the content of this repository is currently **WORK IN PROGRESS**!
+
+## Status
+
+[![CI](https://github.com/ligato/vpp-agent/workflows/CI/badge.svg)](https://github.com/ligato/vpp-agent/actions?query=workflow%3A%22CI%22)
+[![Docker](https://github.com/ligato/vpp-agent/workflows/Docker/badge.svg)](https://github.com/ligato/vpp-agent/actions?query=workflow%3A%22Docker%22)
+[![Build Status](https://travis-ci.com/ligato/vpp-agent.svg?branch=master)](https://travis-ci.com/ligato/vpp-agent)
+[![Coverage Status](https://coveralls.io/repos/github/ligato/vpp-agent/badge.svg?branch=master)](https://coveralls.io/github/ligato/vpp-agent?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ligato/vpp-agent)](https://goreportcard.com/report/github.com/ligato/vpp-agent)
 
 ### Releases
 
@@ -37,10 +38,10 @@ All development is done against **master** branch.
 
 ### Images
 
-|Image|Image Size/Layers|Info|
-|---|:---:|---|
-|[![ligato/vpp-agent](https://img.shields.io/badge/image-ligato/vpp--agent-blue.svg?logo=docker&logoColor=white)](https://cloud.docker.com/u/ligato/repository/docker/ligato/vpp-agent)|![MicroBadger Size](https://img.shields.io/microbadger/image-size/ligato/vpp-agent.svg) ![MicroBadger Layers](https://img.shields.io/microbadger/layers/ligato/vpp-agent.svg)|production image with minimal footprint|
-|[![ligato/dev-vpp-agent](https://img.shields.io/badge/image-ligato/dev--vpp--agent-blue.svg?logo=docker&logoColor=white)](https://cloud.docker.com/u/ligato/repository/docker/ligato/dev-vpp-agent)|![MicroBadger Size](https://img.shields.io/microbadger/image-size/ligato/dev-vpp-agent.svg) ![MicroBadger Layers](https://img.shields.io/microbadger/layers/ligato/dev-vpp-agent.svg)|development image prepared for developers|
+|Image|Image Size/Layers||Info|
+|---|:---:|:---:|---|
+|[![ligato/vpp-agent](https://img.shields.io/badge/image-ligato/vpp--agent-blue.svg?logo=docker&logoColor=white)](https://cloud.docker.com/u/ligato/repository/docker/ligato/vpp-agent)|![MicroBadger Size](https://img.shields.io/microbadger/image-size/ligato/vpp-agent.svg) ![MicroBadger Layers](https://img.shields.io/microbadger/layers/ligato/vpp-agent.svg)|![pulls](https://img.shields.io/docker/pulls/ligato/vpp-agent.svg)|with minimal footprint|
+|[![ligato/dev-vpp-agent](https://img.shields.io/badge/image-ligato/dev--vpp--agent-blue.svg?logo=docker&logoColor=white)](https://cloud.docker.com/u/ligato/repository/docker/ligato/dev-vpp-agent)|![MicroBadger Size](https://img.shields.io/microbadger/image-size/ligato/dev-vpp-agent.svg) ![MicroBadger Layers](https://img.shields.io/microbadger/layers/ligato/dev-vpp-agent.svg)|![pulls](https://img.shields.io/docker/pulls/ligato/dev-vpp-agent.svg)|prepared for developers|
 
 ## Quickstart
 
@@ -73,6 +74,7 @@ docker exec -it agent1 vppctl -s localhost:5002 show interface
 See [README][docker-image] of development docker image for more details.
 
 ## Documentation
+[![GoDoc](https://godoc.org/github.com/ligato/vpp-agent?status.svg)](https://godoc.org/github.com/ligato/vpp-agent)
 
 Extensive documentation for the VPP Agent can be found at [docs.ligato.io](https://docs.ligato.io).
 
@@ -106,7 +108,13 @@ its management/control planes are implemented using the VNF agent:
 
 ## Contributing
 
+![GitHub contributors](https://img.shields.io/github/contributors/ligato/vpp-agent.svg)
+
 If you are interested in contributing, please see the [contribution guidelines][contribution].
+
+## License
+
+[![GitHub license](https://img.shields.io/badge/license-Apache%20license%202.0-blue.svg)](https://github.com/ligato/vpp-agent/blob/master/LICENSE)
 
 [agentctl]: cmd/agentctl
 [cn-infra]: https://github.com/ligato/cn-infra
