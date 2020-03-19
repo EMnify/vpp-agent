@@ -21,8 +21,8 @@ import (
 	"git.fd.io/govpp.git/adapter/mock"
 	govppapi "git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
-	log "github.com/ligato/cn-infra/logging/logrus"
 	. "github.com/onsi/gomega"
+	log "go.ligato.io/cn-infra/v2/logging/logrus"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 )
@@ -113,11 +113,17 @@ func (m *mockedChannel) SendMultiRequest(msg govppapi.Message) govppapi.MultiReq
 
 func (m *mockedChannel) SubscribeNotification(notifChan chan govppapi.Message, event govppapi.Message) (govppapi.SubscriptionCtx, error) {
 	m.channel = notifChan
-	return nil, nil
+	return &mockSubscription{}, nil
 }
 
 func (m *mockedChannel) GetChannel() chan govppapi.Message {
 	return m.channel
+}
+
+type mockSubscription struct{}
+
+func (s *mockSubscription) Unsubscribe() error {
+	return nil
 }
 
 type mockedContext struct {
@@ -239,5 +245,9 @@ func (m *mockVPPClient) BinapiVersion() vpp.Version {
 }
 
 func (m *mockVPPClient) Stats() govppapi.StatsProvider {
+	panic("implement me")
+}
+
+func (m *mockVPPClient) OnReconnect(h func()) {
 	panic("implement me")
 }

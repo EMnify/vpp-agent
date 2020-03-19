@@ -21,7 +21,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	kvs "go.ligato.io/vpp-agent/v3/plugins/kvscheduler/api"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler/internal/graph"
@@ -39,6 +39,7 @@ type transaction struct {
 	values  []kvForTxn
 	nb      *nbTxn    // defined for NB transactions
 	retry   *retryTxn // defined for retry of failed operations
+	created time.Time
 }
 
 // kvForTxn represents a new value for a given key to be applied in a transaction.
@@ -92,7 +93,9 @@ func (s *Scheduler) consumeTransactions() {
 		if canceled {
 			return
 		}
+		reportQueueWait(txn.txnType, time.Since(txn.created).Seconds())
 		s.processTransaction(txn)
+		reportTxnProcessed(txn.txnType, time.Since(txn.created).Seconds())
 	}
 }
 

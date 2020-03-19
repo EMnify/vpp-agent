@@ -17,7 +17,8 @@ package dbadapter
 import (
 	"context"
 
-	"github.com/ligato/cn-infra/db/keyval"
+	"go.ligato.io/cn-infra/v2/db/keyval"
+
 	"go.ligato.io/vpp-agent/v3/pkg/models"
 
 	vppclient "go.ligato.io/vpp-agent/v3/clientv2/vpp"
@@ -217,6 +218,14 @@ func (dsl *DataResyncDSL) IPSecSPD(spd *ipsec.SecurityPolicyDatabase) vppclient.
 	dsl.txn.Put(key, spd)
 	dsl.txnKeys = append(dsl.txnKeys, key)
 
+	return dsl
+}
+
+// IPSecTunnelProtection adds request to RESYNC an IPSec tunnel protection
+func (dsl *DataResyncDSL) IPSecTunnelProtection(tp *ipsec.TunnelProtection) vppclient.DataResyncDSL {
+	key := models.Key(tp)
+	dsl.txn.Put(key, tp)
+	dsl.txnKeys = append(dsl.txnKeys, key)
 	return dsl
 }
 

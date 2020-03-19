@@ -16,12 +16,18 @@ package vppcalls
 
 import (
 	"context"
+	"errors"
 	"net"
 
-	"github.com/ligato/cn-infra/logging"
+	"go.ligato.io/cn-infra/v2/logging"
 
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
+)
+
+var (
+	// ErrIPIPUnsupported error is returned if IPIP interface is not supported on given VPP version.
+	ErrIPIPUnsupported = errors.New("IPIP interface not supported")
 )
 
 // InterfaceDetails is the wrapper structure for the interface northbound API structure.
@@ -180,6 +186,11 @@ type InterfaceVppAPI interface {
 	// UpdateGtpuTunnelDst updates the destination IP and TEID of a GTPU interface.
 	UpdateGtpuTunnelDst(ifIdx uint32, gtpuLink *interfaces.GtpuLink, multicastIf uint32) error
 
+	// AddIpipTunnel adds new IPIP tunnel interface.
+	AddIpipTunnel(ifName string, vrf uint32, ipipLink *interfaces.IPIPLink) (uint32, error)
+	// DelIpipTunnel removes IPIP tunnel interface.
+	DelIpipTunnel(ifName string, ifIdx uint32) error
+
 	// CreateSubif creates sub interface.
 	CreateSubif(ifIdx, vlanID uint32) (swIfIdx uint32, err error)
 	// DeleteSubif deletes sub interface.
@@ -271,9 +282,9 @@ type InterfaceVppRead interface {
 	// DumpDhcpClients dumps DHCP-related information for all interfaces.
 	DumpDhcpClients() (map[uint32]*Dhcp, error)
 	// WatchInterfaceEvents starts watching for interface events.
-	WatchInterfaceEvents(ch chan<- *InterfaceEvent) error
+	WatchInterfaceEvents(ctx context.Context, events chan<- *InterfaceEvent) error
 	// WatchDHCPLeases starts watching for DHCP leases.
-	WatchDHCPLeases(ch chan<- *Lease) error
+	WatchDHCPLeases(ctx context.Context, leases chan<- *Lease) error
 }
 
 var Handler = vpp.RegisterHandler(vpp.HandlerDesc{

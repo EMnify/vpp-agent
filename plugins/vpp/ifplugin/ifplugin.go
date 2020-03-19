@@ -26,14 +26,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ligato/cn-infra/servicelabel"
+	"go.ligato.io/cn-infra/v2/servicelabel"
 
-	"github.com/ligato/cn-infra/datasync"
-	"github.com/ligato/cn-infra/health/statuscheck"
-	"github.com/ligato/cn-infra/idxmap"
-	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/utils/safeclose"
 	"github.com/pkg/errors"
+	"go.ligato.io/cn-infra/v2/datasync"
+	"go.ligato.io/cn-infra/v2/health/statuscheck"
+	"go.ligato.io/cn-infra/v2/idxmap"
+	"go.ligato.io/cn-infra/v2/infra"
+	"go.ligato.io/cn-infra/v2/utils/safeclose"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux"
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
@@ -55,6 +55,7 @@ import (
 
 func init() {
 	kvscheduler.AddNonRetryableError(vppclient.ErrPluginDisabled)
+	kvscheduler.AddNonRetryableError(vppcalls.ErrIPIPUnsupported)
 }
 
 // Default Go routine count used while retrieving linux configuration
@@ -75,7 +76,6 @@ type IfPlugin struct {
 	// descriptors
 	linkStateDescriptor *descriptor.LinkStateDescriptor
 	dhcpDescriptor      *descriptor.DHCPDescriptor
-	spanDescriptor      *descriptor.SpanDescriptor
 
 	// from config file
 	defaultMtu uint32
@@ -242,8 +242,7 @@ func (p *IfPlugin) Init() (err error) {
 		}
 	}
 
-	err = p.ifStateUpdater.Init(p.ctx, p.Log, p.KVScheduler, p.VPP, p.intfIndex,
-		ifNotifHandler, p.publishStats)
+	err = p.ifStateUpdater.Init(p.ctx, p.Log, p.KVScheduler, p.VPP, p.intfIndex, ifNotifHandler, p.publishStats)
 	if err != nil {
 		return err
 	}

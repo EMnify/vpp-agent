@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ligato/cn-infra/logging/logrus"
+	"go.ligato.io/cn-infra/v2/logging/logrus"
 
 	ifplugin_vppcalls "go.ligato.io/vpp-agent/v3/plugins/vpp/ifplugin/vppcalls"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
@@ -114,7 +114,7 @@ func TestVxlanGpe(t *testing.T) {
 				}
 			}
 
-			ifaces, err := h.DumpInterfaces(ctx.Context)
+			ifaces, err := h.DumpInterfaces(ctx.Ctx)
 			if err != nil {
 				t.Fatalf("dumping interfaces failed: %v", err)
 			}
@@ -148,7 +148,7 @@ func TestVxlanGpe(t *testing.T) {
 				t.Fatalf("delete VxLAN-GPE tunnel failed: %v\n", err)
 			}
 
-			ifaces, err = h.DumpInterfaces(ctx.Context)
+			ifaces, err = h.DumpInterfaces(ctx.Ctx)
 			if err != nil {
 				t.Fatalf("dumping interfaces failed: %v", err)
 			}

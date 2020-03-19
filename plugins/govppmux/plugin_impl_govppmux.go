@@ -28,12 +28,12 @@ import (
 	govppapi "git.fd.io/govpp.git/api"
 	govpp "git.fd.io/govpp.git/core"
 	"git.fd.io/govpp.git/proxy"
-	"github.com/ligato/cn-infra/datasync/resync"
-	"github.com/ligato/cn-infra/health/statuscheck"
-	"github.com/ligato/cn-infra/infra"
-	"github.com/ligato/cn-infra/logging"
-	"github.com/ligato/cn-infra/rpc/rest"
 	"github.com/pkg/errors"
+	"go.ligato.io/cn-infra/v2/datasync/resync"
+	"go.ligato.io/cn-infra/v2/health/statuscheck"
+	"go.ligato.io/cn-infra/v2/infra"
+	"go.ligato.io/cn-infra/v2/logging"
+	"go.ligato.io/cn-infra/v2/rpc/rest"
 
 	"go.ligato.io/vpp-agent/v3/plugins/govppmux/vppcalls"
 	"go.ligato.io/vpp-agent/v3/plugins/vpp"
@@ -57,11 +57,17 @@ type Plugin struct {
 	vpeHandler vppcalls.VppCoreAPI
 
 	binapiVersion vpp.Version
+	vppAdapter    adapter.VppAPI
 	vppConn       *govpp.Connection
 	vppConChan    chan govpp.ConnectionEvent
 	lastConnErr   error
 	vppapiChan    govppapi.Channel
+	lastPID       uint32
 
+	onnConnectMu sync.Mutex
+	onConnects   []func()
+
+	statsMu      sync.Mutex
 	statsAdapter adapter.StatsAPI
 	statsConn    *govpp.StatsConnection
 
@@ -90,7 +96,6 @@ func (p *Plugin) Init() (err error) {
 	if p.config, err = p.loadConfig(); err != nil {
 		return err
 	}
-
 	p.Log.Debugf("config: %+v", p.config)
 
 	// set GoVPP config
@@ -98,9 +103,6 @@ func (p *Plugin) Init() (err error) {
 	govpp.HealthCheckReplyTimeout = p.config.HealthCheckReplyTimeout
 	govpp.HealthCheckThreshold = p.config.HealthCheckThreshold
 	govpp.DefaultReplyTimeout = p.config.ReplyTimeout
-
-	// register REST API handlers
-	p.registerHandlers(p.HTTPHandlers)
 
 	var address string
 	useShm := disabledSocketClient || p.config.ConnectViaShm || p.config.ShmPrefix != ""
@@ -110,13 +112,19 @@ func (p *Plugin) Init() (err error) {
 		address = p.config.BinAPISocketPath
 	}
 
+	p.Log.Debugf("found %d registered VPP handlers", len(vpp.GetHandlers()))
+	for name, handler := range vpp.GetHandlers() {
+		versions := handler.Versions()
+		p.Log.Debugf("- handler: %-10s has %d versions: %v", name, len(versions), versions)
+	}
+
 	// TODO: Async connect & automatic reconnect support is not yet implemented in the agent,
 	// so synchronously wait until connected to VPP.
 	startTime := time.Now()
 	p.Log.Debugf("connecting to VPP..")
 
-	vppAdapter := NewVppAdapter(address, useShm)
-	p.vppConn, p.vppConChan, err = govpp.AsyncConnect(vppAdapter, p.config.RetryConnectCount, p.config.RetryConnectTimeout)
+	p.vppAdapter = NewVppAdapter(address, useShm)
+	p.vppConn, p.vppConChan, err = govpp.AsyncConnect(p.vppAdapter, p.config.RetryConnectCount, p.config.RetryConnectTimeout)
 	if err != nil {
 		return err
 	}
@@ -168,6 +176,9 @@ func (p *Plugin) Init() (err error) {
 		}
 		p.Log.Infof("VPP proxy ready")
 	}
+
+	// register REST API handlers
+	p.registerHandlers(p.HTTPHandlers)
 
 	return nil
 }
@@ -316,7 +327,7 @@ func (p *Plugin) updateVPPInfo() (err error) {
 	if err != nil {
 		return err
 	}
-
+	// sort plugins by name
 	sort.Slice(plugins, func(i, j int) bool { return plugins[i].Name < plugins[j].Name })
 
 	p.Log.Debugf("VPP loaded %d plugins", len(plugins))
@@ -333,13 +344,27 @@ func (p *Plugin) updateVPPInfo() (err error) {
 	}
 	p.infoMu.Unlock()
 
-	p.Log.Debugf("found %d registered VPP handlers", len(vpp.GetHandlers()))
-	for name, handler := range vpp.GetHandlers() {
-		versions := handler.Versions()
-		p.Log.Debugf("- handler: %-10s has %d versions: %v", name, len(versions), versions)
+	if p.lastPID != 0 && p.lastPID != session.PID {
+		p.Log.Warnf("VPP has restarted (previous PID: %d)", p.lastPID)
+		p.onConnect()
 	}
+	p.lastPID = session.PID
 
 	return nil
+}
+
+func (p *Plugin) OnReconnect(fn func()) {
+	p.onnConnectMu.Lock()
+	defer p.onnConnectMu.Unlock()
+	p.onConnects = append(p.onConnects, fn)
+}
+
+func (p *Plugin) onConnect() {
+	p.onnConnectMu.Lock()
+	defer p.onnConnectMu.Unlock()
+	for _, fn := range p.onConnects {
+		fn()
+	}
 }
 
 // handleVPPConnectionEvents handles VPP connection events.
@@ -354,6 +379,8 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 				p.StatusCheck.ReportStateChange(p.PluginName, statuscheck.Error, p.lastConnErr)
 				return
 			}
+
+			p.Log.Debugf("VPP connection state changed: %+v", event)
 
 			if event.State == govpp.Connected {
 				if err := p.updateVPPInfo(); err != nil {
@@ -377,8 +404,15 @@ func (p *Plugin) handleVPPConnectionEvents(ctx context.Context) {
 
 				p.lastConnErr = errors.Errorf("VPP connection lost (event: %+v)", event)
 				p.StatusCheck.ReportStateChange(p.PluginName, statuscheck.Error, p.lastConnErr)
+
+				// TODO: fix reconnecting after reaching maximum reconnect attempts
+				//		current implementation wont work with already created govpp channels
+				// keep reconnecting
+				/*if event.State == govpp.Failed {
+					p.vppConn, p.vppConChan, _ = govpp.AsyncConnect(p.vppAdapter, p.config.RetryConnectCount, p.config.RetryConnectTimeout)
+				}*/
 			} else {
-				p.Log.Debugf("VPP connection state: %+v", event)
+				p.Log.Warnf("unknown VPP connection state: %+v", event)
 			}
 
 			p.infoMu.Lock()

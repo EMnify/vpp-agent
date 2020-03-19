@@ -15,8 +15,10 @@
 package orchestrator
 
 import (
-	"github.com/ligato/cn-infra/datasync/kvdbsync/local"
-	"github.com/ligato/cn-infra/rpc/grpc"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
+	"go.ligato.io/cn-infra/v2/rpc/grpc"
+
 	"go.ligato.io/vpp-agent/v3/plugins/kvscheduler"
 )
 
@@ -44,8 +46,13 @@ func NewPlugin(opts ...Option) *Plugin {
 // Option is a function that acts on a Plugin to inject Dependencies or configuration
 type Option func(*Plugin)
 
-func WithReflection(enabled bool) Option {
+func UseReflection(enabled bool) Option {
 	return func(p *Plugin) {
 		p.reflection = enabled
 	}
+}
+
+func EnabledGrpcMetrics() {
+	grpc_prometheus.EnableHandlingTimeHistogram()
+	grpc.UsePromMetrics(grpc_prometheus.DefaultServerMetrics)(&grpc.DefaultPlugin)
 }
