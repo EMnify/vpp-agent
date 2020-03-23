@@ -9,8 +9,8 @@ It consists of:
 	  6 aliases
 	  6 types
 	  1 union
-	  8 messages
-	  4 services
+	 15 messages
+	  7 services
 */
 package gtpu
 
@@ -29,8 +29,10 @@ import (
 const (
 	// ModuleName is the name of this module.
 	ModuleName = "gtpu"
+	// APIVersion is the API version of this module.
+	APIVersion = "3.1.0"
 	// VersionCrc is the CRC of this module.
-	VersionCrc = 0x7046552
+	VersionCrc = 0xfd59d52f
 )
 
 type AddressFamily = ip_types.AddressFamily
@@ -79,6 +81,30 @@ type PrefixMatcher = ip_types.PrefixMatcher
 
 type AddressUnion = ip_types.AddressUnion
 
+// GtpuAddDelLocalResponder represents VPP binary API message 'gtpu_add_del_local_responder'.
+type GtpuAddDelLocalResponder struct {
+	IsAdd   uint8
+	Address Address
+	VrfID   uint32
+}
+
+func (m *GtpuAddDelLocalResponder) Reset()                        { *m = GtpuAddDelLocalResponder{} }
+func (*GtpuAddDelLocalResponder) GetMessageName() string          { return "gtpu_add_del_local_responder" }
+func (*GtpuAddDelLocalResponder) GetCrcString() string            { return "d4741425" }
+func (*GtpuAddDelLocalResponder) GetMessageType() api.MessageType { return api.RequestMessage }
+
+// GtpuAddDelLocalResponderReply represents VPP binary API message 'gtpu_add_del_local_responder_reply'.
+type GtpuAddDelLocalResponderReply struct {
+	Retval int32
+}
+
+func (m *GtpuAddDelLocalResponderReply) Reset() { *m = GtpuAddDelLocalResponderReply{} }
+func (*GtpuAddDelLocalResponderReply) GetMessageName() string {
+	return "gtpu_add_del_local_responder_reply"
+}
+func (*GtpuAddDelLocalResponderReply) GetCrcString() string            { return "e8d4e804" }
+func (*GtpuAddDelLocalResponderReply) GetMessageType() api.MessageType { return api.ReplyMessage }
+
 // GtpuAddDelTunnel represents VPP binary API message 'gtpu_add_del_tunnel'.
 type GtpuAddDelTunnel struct {
 	IsAdd          bool
@@ -107,6 +133,25 @@ func (*GtpuAddDelTunnelReply) GetMessageName() string          { return "gtpu_ad
 func (*GtpuAddDelTunnelReply) GetCrcString() string            { return "5383d31f" }
 func (*GtpuAddDelTunnelReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
+// GtpuLocalResponderDetails represents VPP binary API message 'gtpu_local_responder_details'.
+type GtpuLocalResponderDetails struct {
+	Address Address
+	VrfID   uint32
+}
+
+func (m *GtpuLocalResponderDetails) Reset()                        { *m = GtpuLocalResponderDetails{} }
+func (*GtpuLocalResponderDetails) GetMessageName() string          { return "gtpu_local_responder_details" }
+func (*GtpuLocalResponderDetails) GetCrcString() string            { return "1672dc8a" }
+func (*GtpuLocalResponderDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
+
+// GtpuLocalResponderDump represents VPP binary API message 'gtpu_local_responder_dump'.
+type GtpuLocalResponderDump struct{}
+
+func (m *GtpuLocalResponderDump) Reset()                        { *m = GtpuLocalResponderDump{} }
+func (*GtpuLocalResponderDump) GetMessageName() string          { return "gtpu_local_responder_dump" }
+func (*GtpuLocalResponderDump) GetCrcString() string            { return "51077d14" }
+func (*GtpuLocalResponderDump) GetMessageType() api.MessageType { return api.RequestMessage }
+
 // GtpuSetTunnelDst represents VPP binary API message 'gtpu_set_tunnel_dst'.
 type GtpuSetTunnelDst struct {
 	SwIfIndex      InterfaceIndex
@@ -130,6 +175,21 @@ func (*GtpuSetTunnelDstReply) GetMessageName() string          { return "gtpu_se
 func (*GtpuSetTunnelDstReply) GetCrcString() string            { return "e8d4e804" }
 func (*GtpuSetTunnelDstReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
+// GtpuStaleTunnelEvent represents VPP binary API message 'gtpu_stale_tunnel_event'.
+type GtpuStaleTunnelEvent struct {
+	PID        uint32
+	SwIfIndex  InterfaceIndex
+	SrcAddress Address
+	DstAddress Address
+	SrcTeid    uint32
+	DstTeid    uint32
+}
+
+func (m *GtpuStaleTunnelEvent) Reset()                        { *m = GtpuStaleTunnelEvent{} }
+func (*GtpuStaleTunnelEvent) GetMessageName() string          { return "gtpu_stale_tunnel_event" }
+func (*GtpuStaleTunnelEvent) GetCrcString() string            { return "09d97dea" }
+func (*GtpuStaleTunnelEvent) GetMessageType() api.MessageType { return api.EventMessage }
+
 // GtpuTunnelDetails represents VPP binary API message 'gtpu_tunnel_details'.
 type GtpuTunnelDetails struct {
 	SwIfIndex      InterfaceIndex
@@ -140,11 +200,12 @@ type GtpuTunnelDetails struct {
 	DecapNextIndex uint32
 	SrcTeid        uint32
 	DstTeid        uint32
+	IsStale        bool
 }
 
 func (m *GtpuTunnelDetails) Reset()                        { *m = GtpuTunnelDetails{} }
 func (*GtpuTunnelDetails) GetMessageName() string          { return "gtpu_tunnel_details" }
-func (*GtpuTunnelDetails) GetCrcString() string            { return "ca7b71ac" }
+func (*GtpuTunnelDetails) GetCrcString() string            { return "c3b8e370" }
 func (*GtpuTunnelDetails) GetMessageType() api.MessageType { return api.ReplyMessage }
 
 // GtpuTunnelDump represents VPP binary API message 'gtpu_tunnel_dump'.
@@ -181,37 +242,77 @@ func (*SwInterfaceSetGtpuBypassReply) GetMessageName() string {
 func (*SwInterfaceSetGtpuBypassReply) GetCrcString() string            { return "e8d4e804" }
 func (*SwInterfaceSetGtpuBypassReply) GetMessageType() api.MessageType { return api.ReplyMessage }
 
+// WantGtpuStaleTunnelEvents represents VPP binary API message 'want_gtpu_stale_tunnel_events'.
+type WantGtpuStaleTunnelEvents struct {
+	EnableDisable uint32
+	PID           uint32
+}
+
+func (m *WantGtpuStaleTunnelEvents) Reset()                        { *m = WantGtpuStaleTunnelEvents{} }
+func (*WantGtpuStaleTunnelEvents) GetMessageName() string          { return "want_gtpu_stale_tunnel_events" }
+func (*WantGtpuStaleTunnelEvents) GetCrcString() string            { return "476f5a08" }
+func (*WantGtpuStaleTunnelEvents) GetMessageType() api.MessageType { return api.RequestMessage }
+
+// WantGtpuStaleTunnelEventsReply represents VPP binary API message 'want_gtpu_stale_tunnel_events_reply'.
+type WantGtpuStaleTunnelEventsReply struct {
+	Retval int32
+}
+
+func (m *WantGtpuStaleTunnelEventsReply) Reset() { *m = WantGtpuStaleTunnelEventsReply{} }
+func (*WantGtpuStaleTunnelEventsReply) GetMessageName() string {
+	return "want_gtpu_stale_tunnel_events_reply"
+}
+func (*WantGtpuStaleTunnelEventsReply) GetCrcString() string            { return "e8d4e804" }
+func (*WantGtpuStaleTunnelEventsReply) GetMessageType() api.MessageType { return api.ReplyMessage }
+
 func init() {
+	api.RegisterMessage((*GtpuAddDelLocalResponder)(nil), "gtpu.GtpuAddDelLocalResponder")
+	api.RegisterMessage((*GtpuAddDelLocalResponderReply)(nil), "gtpu.GtpuAddDelLocalResponderReply")
 	api.RegisterMessage((*GtpuAddDelTunnel)(nil), "gtpu.GtpuAddDelTunnel")
 	api.RegisterMessage((*GtpuAddDelTunnelReply)(nil), "gtpu.GtpuAddDelTunnelReply")
+	api.RegisterMessage((*GtpuLocalResponderDetails)(nil), "gtpu.GtpuLocalResponderDetails")
+	api.RegisterMessage((*GtpuLocalResponderDump)(nil), "gtpu.GtpuLocalResponderDump")
 	api.RegisterMessage((*GtpuSetTunnelDst)(nil), "gtpu.GtpuSetTunnelDst")
 	api.RegisterMessage((*GtpuSetTunnelDstReply)(nil), "gtpu.GtpuSetTunnelDstReply")
+	api.RegisterMessage((*GtpuStaleTunnelEvent)(nil), "gtpu.GtpuStaleTunnelEvent")
 	api.RegisterMessage((*GtpuTunnelDetails)(nil), "gtpu.GtpuTunnelDetails")
 	api.RegisterMessage((*GtpuTunnelDump)(nil), "gtpu.GtpuTunnelDump")
 	api.RegisterMessage((*SwInterfaceSetGtpuBypass)(nil), "gtpu.SwInterfaceSetGtpuBypass")
 	api.RegisterMessage((*SwInterfaceSetGtpuBypassReply)(nil), "gtpu.SwInterfaceSetGtpuBypassReply")
+	api.RegisterMessage((*WantGtpuStaleTunnelEvents)(nil), "gtpu.WantGtpuStaleTunnelEvents")
+	api.RegisterMessage((*WantGtpuStaleTunnelEventsReply)(nil), "gtpu.WantGtpuStaleTunnelEventsReply")
 }
 
 // Messages returns list of all messages in this module.
 func AllMessages() []api.Message {
 	return []api.Message{
+		(*GtpuAddDelLocalResponder)(nil),
+		(*GtpuAddDelLocalResponderReply)(nil),
 		(*GtpuAddDelTunnel)(nil),
 		(*GtpuAddDelTunnelReply)(nil),
+		(*GtpuLocalResponderDetails)(nil),
+		(*GtpuLocalResponderDump)(nil),
 		(*GtpuSetTunnelDst)(nil),
 		(*GtpuSetTunnelDstReply)(nil),
+		(*GtpuStaleTunnelEvent)(nil),
 		(*GtpuTunnelDetails)(nil),
 		(*GtpuTunnelDump)(nil),
 		(*SwInterfaceSetGtpuBypass)(nil),
 		(*SwInterfaceSetGtpuBypassReply)(nil),
+		(*WantGtpuStaleTunnelEvents)(nil),
+		(*WantGtpuStaleTunnelEventsReply)(nil),
 	}
 }
 
 // RPCService represents RPC service API for gtpu module.
 type RPCService interface {
+	DumpGtpuLocalResponder(ctx context.Context, in *GtpuLocalResponderDump) (RPCService_DumpGtpuLocalResponderClient, error)
 	DumpGtpuTunnel(ctx context.Context, in *GtpuTunnelDump) (RPCService_DumpGtpuTunnelClient, error)
+	GtpuAddDelLocalResponder(ctx context.Context, in *GtpuAddDelLocalResponder) (*GtpuAddDelLocalResponderReply, error)
 	GtpuAddDelTunnel(ctx context.Context, in *GtpuAddDelTunnel) (*GtpuAddDelTunnelReply, error)
 	GtpuSetTunnelDst(ctx context.Context, in *GtpuSetTunnelDst) (*GtpuSetTunnelDstReply, error)
 	SwInterfaceSetGtpuBypass(ctx context.Context, in *SwInterfaceSetGtpuBypass) (*SwInterfaceSetGtpuBypassReply, error)
+	WantGtpuStaleTunnelEvents(ctx context.Context, in *WantGtpuStaleTunnelEvents) (*WantGtpuStaleTunnelEventsReply, error)
 }
 
 type serviceClient struct {
@@ -220,6 +321,32 @@ type serviceClient struct {
 
 func NewServiceClient(ch api.Channel) RPCService {
 	return &serviceClient{ch}
+}
+
+func (c *serviceClient) DumpGtpuLocalResponder(ctx context.Context, in *GtpuLocalResponderDump) (RPCService_DumpGtpuLocalResponderClient, error) {
+	stream := c.ch.SendMultiRequest(in)
+	x := &serviceClient_DumpGtpuLocalResponderClient{stream}
+	return x, nil
+}
+
+type RPCService_DumpGtpuLocalResponderClient interface {
+	Recv() (*GtpuLocalResponderDetails, error)
+}
+
+type serviceClient_DumpGtpuLocalResponderClient struct {
+	api.MultiRequestCtx
+}
+
+func (c *serviceClient_DumpGtpuLocalResponderClient) Recv() (*GtpuLocalResponderDetails, error) {
+	m := new(GtpuLocalResponderDetails)
+	stop, err := c.MultiRequestCtx.ReceiveReply(m)
+	if err != nil {
+		return nil, err
+	}
+	if stop {
+		return nil, io.EOF
+	}
+	return m, nil
 }
 
 func (c *serviceClient) DumpGtpuTunnel(ctx context.Context, in *GtpuTunnelDump) (RPCService_DumpGtpuTunnelClient, error) {
@@ -248,6 +375,15 @@ func (c *serviceClient_DumpGtpuTunnelClient) Recv() (*GtpuTunnelDetails, error) 
 	return m, nil
 }
 
+func (c *serviceClient) GtpuAddDelLocalResponder(ctx context.Context, in *GtpuAddDelLocalResponder) (*GtpuAddDelLocalResponderReply, error) {
+	out := new(GtpuAddDelLocalResponderReply)
+	err := c.ch.SendRequest(in).ReceiveReply(out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *serviceClient) GtpuAddDelTunnel(ctx context.Context, in *GtpuAddDelTunnel) (*GtpuAddDelTunnelReply, error) {
 	out := new(GtpuAddDelTunnelReply)
 	err := c.ch.SendRequest(in).ReceiveReply(out)
@@ -268,6 +404,15 @@ func (c *serviceClient) GtpuSetTunnelDst(ctx context.Context, in *GtpuSetTunnelD
 
 func (c *serviceClient) SwInterfaceSetGtpuBypass(ctx context.Context, in *SwInterfaceSetGtpuBypass) (*SwInterfaceSetGtpuBypassReply, error) {
 	out := new(SwInterfaceSetGtpuBypassReply)
+	err := c.ch.SendRequest(in).ReceiveReply(out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) WantGtpuStaleTunnelEvents(ctx context.Context, in *WantGtpuStaleTunnelEvents) (*WantGtpuStaleTunnelEventsReply, error) {
+	out := new(WantGtpuStaleTunnelEventsReply)
 	err := c.ch.SendRequest(in).ReceiveReply(out)
 	if err != nil {
 		return nil, err
